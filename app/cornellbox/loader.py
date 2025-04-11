@@ -1,6 +1,6 @@
 from taichi.math import vec3
 
-import trttrtr.core as g
+import trtrt.core as g
 
 
 def load_cornellbox():
