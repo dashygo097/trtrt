@@ -9,7 +9,7 @@ from .frontend_utils.input_tracer import InputTracer
 from .objects import Ray
 from .postprocess import JointBilateralFilter, ProcessorCore, ToneMapping
 from .records import GBuffer, VelocityBuffer
-from .renderer import Renderer
+from .renderer import Albedo, Renderer
 from .scene import Meshes
 
 
@@ -29,7 +29,7 @@ class FrontEnd:
         self.input_tracer = InputTracer(self.window, pixels=self.pixels)
         self.camera = Camera()
         self.scene = Meshes()
-        self.renderer = Renderer()
+        self.renderer = Albedo()
         self.post_processors: List[ProcessorCore] = []
 
         # State

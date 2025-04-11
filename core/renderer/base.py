@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from typing import Dict
 
 import taichi as ti
@@ -10,7 +11,7 @@ from .sampler import Sampler
 
 
 @ti.data_oriented
-class Renderer:
+class Renderer(ABC):
     def __init__(
         self,
         sampler: Sampler = Sampler(),
@@ -43,6 +44,7 @@ class Renderer:
         self.params["sampler"] = self.sampler._name()
         self.params["samples_per_pixel"] = self.samples_per_pixel[None]
 
+    @abstractmethod
     @ti.func
     def ray_color(self, scene, ray: Ray):  # pyright: ignore
         color_buffer = ti.Vector([1.0, 1.0, 1.0])

@@ -1,10 +1,11 @@
+from abc import ABC, abstractmethod
 from typing import Dict
 
 import taichi as ti
 
 
 @ti.data_oriented
-class ProcessorCore:
+class ProcessorCore(ABC):
     def __init__(self, enabled: bool = False) -> None:
         self.enabled = ti.field(dtype=ti.i32, shape=())
 
@@ -32,6 +33,7 @@ class ProcessorCore:
     def get_params(self) -> Dict:
         return self.params
 
+    @abstractmethod
     @ti.kernel
     def process(self):
         pass
