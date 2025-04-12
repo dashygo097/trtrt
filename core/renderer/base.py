@@ -46,12 +46,12 @@ class Renderer(ABC):
 
     @abstractmethod
     @ti.func
-    def ray_color(self, scene, ray: Ray):  # pyright: ignore
+    def ray_color(self, scene, ray: Ray):
         color_buffer = ti.Vector([1.0, 1.0, 1.0])
         return color_buffer
 
     @ti.func
-    def fetch_gbuffer(self, scene, ray: Ray):  # pyright: ignore
+    def fetch_gbuffer(self, scene, ray: Ray):
         hitinfo = scene.intersect(ray)
         # TODO: A better way wo impl depth buffer
         depth = (hitinfo.time - NEAR_Z) / (FAR_Z - NEAR_Z)

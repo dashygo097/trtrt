@@ -94,7 +94,7 @@ class FrontEnd:
             color = ti.Vector([0.0, 0.0, 0.0])
             u = (i + ti.random()) / self.res[0]
             v = (j + ti.random()) / self.res[1]
-            for n in range(self.renderer.samples_per_pixel[None]):  # pyright: ignore
+            for _ in range(self.renderer.samples_per_pixel[None]):
                 ray = self.camera.get_ray(u, v)
                 color += self.renderer.ray_color(self.scene, ray)
             self.tmp_buffers[i, j] = color / self.renderer.samples_per_pixel[None]

@@ -130,7 +130,7 @@ class Meshes:
     @overload
     def add_obj(
         self,
-        obj: Union[Triangle, Sphere, Mesh],  # pyright: ignore
+        obj: Union[Triangle, Sphere, Mesh],
     ) -> None:
         self.add_obj(obj)
 
@@ -162,9 +162,7 @@ class Meshes:
         self.info()
 
     def info(self) -> None:
-        has_directional_light = (
-            1 if self.dir_light.color.norm() > 0.0 else 0  # pyright: ignore
-        )
+        has_directional_light = 1 if self.dir_light.color.norm() > 0.0 else 0
         print("[INFO] BUILD SUCCESS!")
         print(
             "[INFO] "
@@ -202,34 +200,34 @@ class Meshes:
         self.bg_top = top
         self.bg_bottom = bottom
 
-    def set_dir_light(self, dir_light: DirecLight) -> None:  # pyright: ignore
+    def set_dir_light(self, dir_light: DirecLight) -> None:
         self.dir_light = dir_light
 
     @ti.func
-    def intersect(self, ray: Ray, tmin=TMIN, tmax=TMAX):  # pyright: ignore
+    def intersect(self, ray: Ray, tmin=TMIN, tmax=TMAX):
         hitinfo = HitInfo(time=tmax)
         hitinfo_tmp = HitInfo(time=tmax)
 
         for index in range(self.tri_ptr[None]):
-            hitinfo_tmp = self.mesh[index].intersect(  # pyright: ignore
+            hitinfo_tmp = self.mesh[index].intersect(
                 ray,
                 tmin,
-                hitinfo.time,  # pyright: ignore
+                hitinfo.time,
             )
 
             if hitinfo_tmp.is_hit:
-                if hitinfo_tmp.time < hitinfo.time:  # pyright: ignore
+                if hitinfo_tmp.time < hitinfo.time:
                     hitinfo = hitinfo_tmp
 
         for index in range(self.sphere_ptr[None]):
-            hitinfo_tmp = self.spheres[index].intersect(  # pyright: ignore
+            hitinfo_tmp = self.spheres[index].intersect(
                 ray,
                 tmin,
-                hitinfo.time,  # pyright: ignore
+                hitinfo.time,
             )
 
-            if hitinfo_tmp.is_hit:  # pyright: ignore
-                if hitinfo_tmp.time < hitinfo.time:  # pyright: ignore
+            if hitinfo_tmp.is_hit:
+                if hitinfo_tmp.time < hitinfo.time:
                     hitinfo = hitinfo_tmp
 
         return hitinfo
@@ -265,11 +263,11 @@ class Meshes:
             )
 
     def add_obj(self, *args, **kwargs) -> None:
-        if len(args) == 1 and isinstance(args[0], Triangle):  # pyright: ignore
+        if len(args) == 1 and isinstance(args[0], Triangle):
             obj = args[0]
             self.label.append((obj.tag, ObjectShape.TRIANGLE))
             self.objects.append(obj)
-        elif len(args) == 1 and isinstance(args[0], Sphere):  # pyright: ignore
+        elif len(args) == 1 and isinstance(args[0], Sphere):
             obj = args[0]
             self.label.append((obj.tag, ObjectShape.SPHERE))
             self.objects.append(obj)

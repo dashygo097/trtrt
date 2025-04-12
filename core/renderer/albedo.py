@@ -26,6 +26,6 @@ class Albedo(Renderer):
         super().update()
 
     @ti.func
-    def ray_color(self, scene, ray: Ray):  # pyright: ignore
+    def ray_color(self, scene, ray: Ray):
         hitinfo = scene.intersect(ray)
         return hitinfo.albedo

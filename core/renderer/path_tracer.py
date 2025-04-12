@@ -78,10 +78,10 @@ class PathTracer(Renderer):
         ).normalized()
 
     @ti.func
-    def ray_color(self, scene, ray: Ray):  # pyright: ignore
+    def ray_color(self, scene, ray: Ray):
         color_buffer = vec3(0.0)
         luminance = vec3(1.0)
-        for bounce in range(self.max_depth[None]):  # pyright: ignore
+        for bounce in range(self.max_depth[None]):
             # Russian Roulette
             if ti.random() > self.p_rr[None] and bounce > 0:
                 break
@@ -105,7 +105,7 @@ class PathTracer(Renderer):
                         light_ray, light_color = self.sample_direct_light(
                             scene, hitinfo.pos, hitinfo.normal
                         )
-                        L = light_ray.dir  # pyright: ignore
+                        L = light_ray.dir
                         H = (V + L).normalized()
 
                         k = direct_remapping(hitinfo.roughness * hitinfo.roughness)

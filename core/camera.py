@@ -109,14 +109,6 @@ class Camera:
 
     @ti.func
     def update_proj(self):
-        """
-        proj = ti.Matrix.zero(ti.f32, 4, 4)
-        proj[0, 0] = 1.0 / (aspect_ratio * tan_half_fov)
-        proj[1, 1] = 1.0 / tan_half_fov
-        proj[2, 2] = -(far + near) / (far - near)
-        proj[2, 3] = -2.0 * far * near / (far - near)
-        proj[3, 2] = -1.0
-        """
         self.proj[None][0, 0] = 1.0 / (self.aspect_ratio[None] * self.half_width[None])
         self.proj[None][1, 1] = 1.0 / self.half_width[None]
         self.proj[None][2, 2] = -1.0
@@ -124,7 +116,7 @@ class Camera:
         self.proj[None][3, 2] = -1.0
 
     @ti.func
-    def get_ray(self, u, v) -> Ray:  # pyright: ignore
+    def get_ray(self, u, v) -> Ray:
         self.update()
         return Ray(
             self.lookfrom[None],
@@ -192,7 +184,7 @@ class Camera:
 
     def focus_on(
         self,
-        window,
+        window: ti.ui.Window,
         yaw_speed: float = 3.0,
         pitch_speed: float = 3.0,
     ) -> None:
