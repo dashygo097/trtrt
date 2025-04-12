@@ -5,9 +5,8 @@ import taichi as ti
 from taichi.math import vec3
 from termcolor import colored
 
-from .bvh import BVH, init_bbox
 from .objects import DirecLight, Ray, Sphere, Triangle
-from .records import BVHHitInfo, HitInfo
+from .records import HitInfo
 from .utils.const import TMAX, TMIN, ObjectShape, ObjectTag, PBRPreset
 from .utils.loader import load_obj
 
@@ -140,8 +139,6 @@ class Meshes:
         self.add_obj(objs)
 
     def make(self) -> None:
-        init_bbox(self.objects)
-
         for index, obj in enumerate(self.objects):
             label = self.label[index]
             if label[0] == ObjectTag.PBR and obj.emission.norm() > 0.0:
@@ -161,10 +158,6 @@ class Meshes:
 
             else:
                 pass
-
-        self.bvh = BVH(self.objects)
-        self.bvh.build(self.bvh.objects, 0, len(self.objects))
-        self.bvh.info()
 
         self.info()
 
@@ -238,28 +231,6 @@ class Meshes:
             if hitinfo_tmp.is_hit:  # pyright: ignore
                 if hitinfo_tmp.time < hitinfo.time:  # pyright: ignore
                     hitinfo = hitinfo_tmp
-
-        """
-
-        bvh_hitinfo = self.bvh.intersect(self, ray)
-
-        if -1 < bvh_hitinfo.obj_id < self.tri_ptr[None]:
-            hitinfo_tmp = self.mesh[bvh_hitinfo.obj_id].intersect(  # pyright: ignore
-                ray, tmin, tmax
-            )
-            hitinfo = hitinfo_tmp
-
-        elif bvh_hitinfo.obj_id < self.tri_ptr[None] + self.sphere_ptr[None]:
-            hitinfo_tmp = self.spheres[
-                bvh_hitinfo.obj_id - self.tri_ptr[None]
-            ].intersect(  # pyright: ignore
-                ray, tmin, tmax
-            )
-            hitinfo = hitinfo_tmp
-
-        self.id[None] = bvh_hitinfo.is_hit
-
-        """
 
         return hitinfo
 
