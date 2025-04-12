@@ -3,7 +3,7 @@ from taichi.math import vec3
 
 from .bvh import AABB
 from .records import HitInfo
-from .utils.const import EPSILON, TMAX, TMIN
+from .utils.const import EPSILON, FAR_Z, NEAR_Z, TMAX, TMIN
 
 
 @ti.dataclass
@@ -29,20 +29,22 @@ class Triangle:
     roughness: ti.f32  # pyright: ignore
     emission: vec3  # pyright: ignore
 
-    @ti.func
     def init(self):
-        self.bbox.from_vec(
-            vec3(
-                ti.min(self.v0.x, self.v1.x, self.v2.x),
-                ti.min(self.v0.y, self.v1.y, self.v2.y),
-                ti.min(self.v0.z, self.v1.z, self.v2.z),
-            ),
-            vec3(
-                ti.max(self.v0.x, self.v1.x, self.v2.x),
-                ti.max(self.v0.y, self.v1.y, self.v2.y),
-                ti.max(self.v0.z, self.v1.z, self.v2.z),
-            ),
-        )
+        v0 = self.v0
+        v1 = self.v1 + self.v2
+        self.bbox.from_vec(v0, v1)
+        if self.bbox.x.min >= self.bbox.x.max:
+            self.bbox.x.min -= NEAR_Z
+            self.bbox.x.max += FAR_Z
+            print(self.bbox.x.min, self.bbox.x.max)
+        if self.bbox.y.min >= self.bbox.y.max:
+            self.bbox.y.min -= NEAR_Z
+            self.bbox.y.max += FAR_Z
+            print(self.bbox.y.min, self.bbox.y.max)
+        if self.bbox.z.min >= self.bbox.z.max:
+            self.bbox.z.min -= NEAR_Z
+            self.bbox.z.max += FAR_Z
+            print(self.bbox.z.min, self.bbox.z.max)
 
     @ti.func
     def intersect(self, ray: Ray, tmin=TMIN, tmax=TMAX):  # pyright: ignore
@@ -116,7 +118,6 @@ class Sphere:
     roughness: ti.f32  # pyright: ignore
     emission: vec3  # pyright: ignore
 
-    @ti.func
     def init(self):
         self.bbox.from_vec(
             self.center - vec3(self.radius),
@@ -184,6 +185,15 @@ class DirecLight:
     color: vec3  # pyright: ignore
 
 
+def init4bbox(obj):
+    if isinstance(obj, Triangle):
+        init_triangle(obj)
+    elif isinstance(obj, Sphere):
+        init_sphere(obj)
+    else:
+        raise ValueError("Unknown object type")
+
+
 # NOTE: I HAVE NO IDEA WHY MY ORIGINAL CODE DOESN'T WORK
 # LEAVE THIS FOR TEMPORARY USE
 def init_triangle(triangle):
@@ -193,6 +203,15 @@ def init_triangle(triangle):
     triangle.bbox.y.max = ti.max(triangle.v0.y, triangle.v1.y, triangle.v2.y)
     triangle.bbox.z.min = ti.min(triangle.v0.z, triangle.v1.z, triangle.v2.z)
     triangle.bbox.z.max = ti.max(triangle.v0.z, triangle.v1.z, triangle.v2.z)
+    if triangle.bbox.x.min >= triangle.bbox.x.max:
+        triangle.bbox.x.min -= 2 * TMIN
+        triangle.bbox.x.max += 2 * TMIN
+    if triangle.bbox.y.min >= triangle.bbox.y.max:
+        triangle.bbox.y.min -= 2 * TMIN
+        triangle.bbox.y.max += 2 * TMIN
+    if triangle.bbox.z.min >= triangle.bbox.z.max:
+        triangle.bbox.z.min -= 2 * TMIN
+        triangle.bbox.z.max += 2 * TMIN
 
 
 def init_sphere(sphere):

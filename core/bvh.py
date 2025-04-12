@@ -1,4 +1,6 @@
+from operator import is_
 from random import randint
+from typing import List
 
 import taichi as ti
 
@@ -81,6 +83,7 @@ class AABB:
 
     @ti.func
     def intersect(self, ray, tmin=TMIN, tmax=TMAX):
+        is_hit = False
         hit_tmin = tmin
         hit_tmax = tmax
         for i in range(3):
@@ -98,7 +101,9 @@ class AABB:
                 hit_tmin = tmin
                 hit_tmax = tmax
 
-        return BVHHitInfo(tmin=hit_tmin, tmax=hit_tmax, is_hit=hit_tmax >= hit_tmin)
+        is_hit = hit_tmax >= hit_tmin
+
+        return BVHHitInfo(is_hit=is_hit, tmin=hit_tmin, tmax=hit_tmax)
 
 
 @ti.kernel
@@ -117,119 +122,125 @@ def get_centroid(obj: ti.template(), axis: ti.i32) -> ti.f32:
     return (interval.min + interval.max) / 2.0
 
 
-@ti.data_oriented
+def sort_objects(objects: List) -> None:
+    axis = randint(0, 2)
+    objects.sort(key=lambda obj: get_centroid(obj, axis))
+
+
+@ti.dataclass
 class BVHNode:
-    def __init__(self):
-        self.bbox = None
-        self.obj_id = -1
+    bbox: AABB
+    left_idx: ti.i32  # Index of left child in node array
+    right_idx: ti.i32  # Index of right child in node array
+    object_idx: ti.i32  # Index of object (if leaf node)
+    is_leaf: ti.i32  # Using i32 as bool (0=False, 1=True)
 
-        self.left = None
-        self.right = None
 
-        self.leaf = ti.field(ti.i32, shape=())
-
-        self.leaf[None] = 0
-        self.has_left = 0
-        self.has_right = 0
-
-    def set_left(self, left):
-        self.left = left
-        self.has_left = 1
-
-    def set_right(self, right):
-        self.right = right
-        self.has_right = 1
-
-    def set_leaf(self, obj, obj_id):
-        self.bbox = obj.bbox
-        self.obj_id = obj_id
-        self.leaf[None] = 1
+@ti.data_oriented
+class Stack:
+    def __init__(self, max_size):
+        self.max_size = max_size
+        self.stack = ti.field(ti.i32, shape=max_size)
+        self.size = ti.field(ti.i32, shape=())
 
     @ti.func
-    def intersect(self, ray, tmin=TMIN, tmax=TMAX):
-        is_hit = False
-        hit_obj_id = -1
+    def push(self, value: ti.i32):
+        if self.size[None] < self.max_size:
+            self.stack[self.size[None]] = value
+            self.size[None] += 1
 
-        bvh_hitinfo = self.bbox.intersect(ray, tmin, tmax)
+    @ti.func
+    def pop(self) -> ti.i32:
+        obj = -1
+        if self.size[None] > 0:
+            self.size[None] -= 1
+            obj = self.stack[self.size[None]]
+        return obj
 
-        if bvh_hitinfo.is_hit:
-            # If this is a leaf node, return the object ID
-            if self.leaf[None] == 1:
-                is_hit = True
-                hit_obj_id = self.obj_id
-            else:
-                hit_dist = tmax
-                if ti.static(self.has_left):
-                    left_hit, left_obj_id = self.left.intersect(
-                        ray, bvh_hitinfo.tmin, hit_dist
+
+@ti.data_oriented
+class BVH:
+    def __init__(self, objects):
+        self.objects = objects
+
+        self.max_nodes = 2 * len(objects)
+
+        self.nodes = BVHNode.field(shape=self.max_nodes)
+        self.nodes_used = ti.field(ti.i32, shape=())
+        self.nodes_used[None] = 0
+
+        self.root_idx = self.build(objects, 0, len(objects))
+
+        self.stack = Stack(self.max_nodes)
+
+    def build(self, objects, start, end):
+        if start >= end:
+            return -1
+
+        node_idx = self.nodes_used[None]
+        self.nodes_used[None] += 1
+
+        node = BVHNode(bbox=AABB(), left_idx=-1, right_idx=-1, object_idx=-1, is_leaf=0)
+
+        if end - start == 1:
+            node.bbox = objects[start].bbox
+            node.object_idx = start
+            node.is_leaf = 1
+            self.nodes[node_idx] = node
+            return node_idx
+
+        node.bbox = objects[start].bbox
+        for i in range(start + 1, end):
+            node.bbox = aabb_union(node.bbox, objects[i].bbox)
+
+        objects_slice = objects[start:end]
+        sort_objects(objects_slice)
+        for i in range(len(objects_slice)):
+            objects[start + i] = objects_slice[i]
+
+        mid = start + (end - start) // 2
+
+        node.left_idx = self.build(objects, start, mid)
+        node.right_idx = self.build(objects, mid, end)
+
+        self.nodes[node_idx] = node
+        return node_idx
+
+    def info(self):
+        pass
+
+    @ti.func
+    def intersect(self, scene, ray: ti.template()) -> BVHHitInfo:
+        bvh_hitinfo = BVHHitInfo(is_hit=False, tmin=TMIN, tmax=TMAX, obj_id=-1)
+        self.stack.push(self.root_idx)
+
+        while self.stack.size[None] > 0:
+            node_idx = self.stack.pop()
+
+            node = self.nodes[node_idx]
+            box_hit = node.bbox.intersect(ray, bvh_hitinfo.tmin, bvh_hitinfo.tmax)
+
+            if box_hit.is_hit:
+                if node.is_leaf:
+                    obj_hit = node.bbox.intersect(
+                        ray, bvh_hitinfo.tmin, bvh_hitinfo.tmax
                     )
-                    if left_hit:
-                        is_hit = True
-                        hit_obj_id = left_obj_id
+                    if obj_hit.is_hit and obj_hit.tmin < bvh_hitinfo.tmax:
+                        bvh_hitinfo.is_hit = True
+                        bvh_hitinfo.tmin = obj_hit.tmin
+                        bvh_hitinfo.tmax = obj_hit.tmax
+                        bvh_hitinfo.obj_id = node.object_idx
+                        break
+                else:
+                    self.stack.push(node.right_idx)
+                    self.stack.push(node.left_idx)
 
-                if ti.static(self.has_right):
-                    right_hit, right_obj_id = self.right.intersect(
-                        ray, bvh_hitinfo.tmin, hit_dist
-                    )
-                    if right_hit:
-                        is_hit = True
-                        hit_obj_id = right_obj_id
-
-        return is_hit, hit_obj_id
-
-
-def build_bvh(objects, start, end):
-    if start >= end:
-        return None
-
-    if end - start == 1:
-        node = BVHNode()
-        node.set_leaf(objects[start], start)
-        return node
-
-    axis = randint(0, 2)
-
-    objects[start:end] = sorted(
-        objects[start:end],
-        key=lambda obj: get_centroid(obj, axis),
-    )
-
-    bbox = objects[start].bbox
-    for i in range(start + 1, end):
-        bbox = aabb_union(bbox, objects[i].bbox)
-
-    mid = (start + end) // 2
-    node = BVHNode()
-    left = build_bvh(objects, start, mid)
-    right = build_bvh(objects, mid, end)
-
-    if left is not None:
-        node.set_left(left)
-
-    if right is not None:
-        node.set_right(right)
-
-    node.bbox = bbox
-
-    return node
-
-
-@ti.func
-def bvh_intersect(bvh, ray, tmin=TMIN, tmax=TMAX):
-    is_hit, obj_id = bvh.intersect(ray, tmin, tmax)
-    return is_hit, obj_id
+        return bvh_hitinfo
 
 
 def init_bbox(objects):
-    from .objects import Sphere, Triangle, init_sphere, init_triangle
+    from .objects import init4bbox
 
     num_objects = len(objects)
     for index in range(num_objects):
-        if isinstance(objects[index], Triangle):
-            init_triangle(objects[index])
-
-        elif isinstance(objects[index], Sphere):
-            init_sphere(objects[index])
-
-        else:
-            raise ValueError("Invalid object type, expected Triangle or Sphere")
+        init4bbox(objects[index])

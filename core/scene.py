@@ -5,9 +5,9 @@ import taichi as ti
 from taichi.math import vec3
 from termcolor import colored
 
-from .bvh import build_bvh, bvh_intersect, init_bbox
+from .bvh import BVH, init_bbox
 from .objects import DirecLight, Ray, Sphere, Triangle
-from .records import HitInfo
+from .records import BVHHitInfo, HitInfo
 from .utils.const import TMAX, TMIN, ObjectShape, ObjectTag, PBRPreset
 from .utils.loader import load_obj
 
@@ -88,6 +88,8 @@ class Meshes:
         self.bg_bottom = vec3(0.0)
         self.dir_light = DirecLight()
 
+        self.id = ti.field(dtype=ti.i32, shape=())
+
     def __getitem__(self, index: int):
         if 0 <= index < self.tri_ptr[None]:
             obj = self.mesh[index]
@@ -110,6 +112,16 @@ class Meshes:
     def add_mesh(
         self,
         tag: ObjectTag,
+        vertices: np.ndarray,
+        indices: np.ndarray,
+        **kwargs,
+    ) -> None:
+        self.add_mesh(tag, vertices, indices, **kwargs)
+
+    @overload
+    def add_mesh(
+        self,
+        tag: int,
         vertices: np.ndarray,
         indices: np.ndarray,
         **kwargs,
@@ -150,7 +162,10 @@ class Meshes:
             else:
                 pass
 
-        self.node = build_bvh(self.objects, 0, len(self.objects))
+        self.bvh = BVH(self.objects)
+        self.bvh.build(self.bvh.objects, 0, len(self.objects))
+        self.bvh.info()
+
         self.info()
 
     def info(self) -> None:
@@ -225,27 +240,24 @@ class Meshes:
                     hitinfo = hitinfo_tmp
 
         """
-        is_hit, obj_id = bvh_intersect(self.node, ray, tmin, tmax)
-        if is_hit:
-            if 0 <= obj_id and obj_id < self.tri_ptr[None]:
-                hit_info = self.mesh[obj_id].intersect(  # pyright: ignore
-                    ray,
-                    tmin,
-                    hitinfo.time,  # pyright: ignore
-                )
 
-            elif (
-                self.tri_ptr[None]
-                <= obj_id
-                < self.tri_ptr[None] + self.sphere_ptr[None]
-            ):
-                hit_info = self.spheres[
-                    obj_id - self.tri_ptr[None]
-                ].intersect(  # pyright: ignore
-                    ray,
-                    tmin,
-                    hitinfo.time,  # pyright: ignore
-                )
+        bvh_hitinfo = self.bvh.intersect(self, ray)
+
+        if -1 < bvh_hitinfo.obj_id < self.tri_ptr[None]:
+            hitinfo_tmp = self.mesh[bvh_hitinfo.obj_id].intersect(  # pyright: ignore
+                ray, tmin, tmax
+            )
+            hitinfo = hitinfo_tmp
+
+        elif bvh_hitinfo.obj_id < self.tri_ptr[None] + self.sphere_ptr[None]:
+            hitinfo_tmp = self.spheres[
+                bvh_hitinfo.obj_id - self.tri_ptr[None]
+            ].intersect(  # pyright: ignore
+                ray, tmin, tmax
+            )
+            hitinfo = hitinfo_tmp
+
+        self.id[None] = bvh_hitinfo.is_hit
 
         """
 

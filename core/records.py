@@ -24,6 +24,7 @@ class BVHHitInfo:
     is_hit: ti.u1
     tmin: ti.f32
     tmax: ti.f32
+    obj_id: ti.i32
 
 
 @ti.dataclass
