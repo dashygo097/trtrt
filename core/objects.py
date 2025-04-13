@@ -174,27 +174,25 @@ def init4bbox(obj):
 # NOTE: I HAVE NO IDEA WHY MY ORIGINAL CODE DOESN'T WORK
 # LEAVE THIS FOR TEMPORARY USE
 def init_triangle(triangle):
-    triangle.bbox.x.min = ti.min(triangle.v0.x, triangle.v1.x, triangle.v2.x)
-    triangle.bbox.x.max = ti.max(triangle.v0.x, triangle.v1.x, triangle.v2.x)
-    triangle.bbox.y.min = ti.min(triangle.v0.y, triangle.v1.y, triangle.v2.y)
-    triangle.bbox.y.max = ti.max(triangle.v0.y, triangle.v1.y, triangle.v2.y)
-    triangle.bbox.z.min = ti.min(triangle.v0.z, triangle.v1.z, triangle.v2.z)
-    triangle.bbox.z.max = ti.max(triangle.v0.z, triangle.v1.z, triangle.v2.z)
-    if triangle.bbox.x.min >= triangle.bbox.x.max:
-        triangle.bbox.x.min -= 2 * TMIN
-        triangle.bbox.x.max += 2 * TMIN
-    if triangle.bbox.y.min >= triangle.bbox.y.max:
-        triangle.bbox.y.min -= 2 * TMIN
-        triangle.bbox.y.max += 2 * TMIN
-    if triangle.bbox.z.min >= triangle.bbox.z.max:
-        triangle.bbox.z.min -= 2 * TMIN
-        triangle.bbox.z.max += 2 * TMIN
+    triangle.bbox.min.x = ti.min(triangle.v0.x, triangle.v1.x, triangle.v2.x)
+    triangle.bbox.max.x = ti.max(triangle.v0.x, triangle.v1.x, triangle.v2.x)
+    triangle.bbox.min.y = ti.min(triangle.v0.y, triangle.v1.y, triangle.v2.y)
+    triangle.bbox.max.y = ti.max(triangle.v0.y, triangle.v1.y, triangle.v2.y)
+    triangle.bbox.min.z = ti.min(triangle.v0.z, triangle.v1.z, triangle.v2.z)
+    triangle.bbox.max.z = ti.max(triangle.v0.z, triangle.v1.z, triangle.v2.z)
+
+    triangle.bbox.min.x -= TMIN * 2
+    triangle.bbox.max.x += TMIN * 2
+    triangle.bbox.min.y -= TMIN * 2
+    triangle.bbox.max.y += TMIN * 2
+    triangle.bbox.min.z -= TMIN * 2
+    triangle.bbox.max.z += TMIN * 2
 
 
 def init_sphere(sphere):
-    sphere.bbox.x.min = sphere.center.x - sphere.radius
-    sphere.bbox.x.max = sphere.center.x + sphere.radius
-    sphere.bbox.y.min = sphere.center.y - sphere.radius
-    sphere.bbox.y.max = sphere.center.y + sphere.radius
-    sphere.bbox.z.min = sphere.center.z - sphere.radius
-    sphere.bbox.z.max = sphere.center.z + sphere.radius
+    sphere.bbox.min.x = sphere.center.x - sphere.radius
+    sphere.bbox.max.x = sphere.center.x + sphere.radius
+    sphere.bbox.min.y = sphere.center.y - sphere.radius
+    sphere.bbox.max.y = sphere.center.y + sphere.radius
+    sphere.bbox.min.z = sphere.center.z - sphere.radius
+    sphere.bbox.max.z = sphere.center.z + sphere.radius
