@@ -1,5 +1,9 @@
-from ..postprocess import (BilateralFilter, GaussianBlur, JointBilateralFilter,
-                           ToneMapping)
+from ..postprocess import (
+    BilateralFilter,
+    GaussianBlur,
+    JointBilateralFilter,
+    ToneMapping,
+)
 from ..renderer import PathTracer, ZBuffer
 
 
@@ -151,9 +155,11 @@ def make_ui(f) -> None:
                         f.panel_update = True
 
         # Control Panel
-        with f.gui.sub_window("Control Panel", 0.02, 0.9, 0.2, 0.08):
+        with f.gui.sub_window("Control Panel", 0.02, 0.85, 0.2, 0.12):
             max_fps = f.gui.slider_int("Target FPS", f.fps[None], 10, 90)
             panel_update = f.gui.button("Refresh")
+            use = f.gui.slider_int("Use BVH or Not", f.scene.use_bvh[None], 0, 1)
+
             if panel_update:
                 f.panel_update = True
 
@@ -161,3 +167,6 @@ def make_ui(f) -> None:
                 f.fps[None] = max_fps
                 f._set_fps(max_fps)
                 f.panel_update = True
+
+            if f.scene.use_bvh[None] != use:
+                f.scene.set_bvh(use)

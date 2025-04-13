@@ -4,8 +4,7 @@ from typing import List, Optional
 import taichi as ti
 from taichi.math import vec3
 
-from .records import BVHHitInfo
-from .utils.const import EPSILON, TMAX, TMIN
+from .utils.const import EPSILON
 
 
 @ti.dataclass
@@ -53,7 +52,7 @@ class BVHNode:
 @ti.data_oriented
 class BVH:
     def __init__(self, objects: Optional[List] = None) -> None:
-        self.objects = objects.copy() if objects is not None else []
+        self.objects: List = objects.copy() if objects is not None else []
         self.set_objects(self.objects)
 
     def set_objects(self, objects: List) -> None:

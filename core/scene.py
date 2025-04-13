@@ -63,11 +63,13 @@ class Mesh:
 
 @ti.data_oriented
 class Meshes:
-    def __init__(
-        self,
-        maximum: int = 100,
-    ) -> None:
-        self.maximum = maximum * 2
+    def __init__(self, maximum: int = 100, use_bvh: bool = False) -> None:
+        self.maximum = ti.field(ti.i32, shape=())
+        self.use_bvh = ti.field(ti.u1, shape=())
+        self.maximum[None] = maximum * 2
+        self.use_bvh[None] = use_bvh
+
+        self.stack = ti.field(ti.i32, shape=maximum * 4)
 
         self.objects = []
         self.label = []
@@ -88,8 +90,11 @@ class Meshes:
         self.bg_bottom = vec3(0.0)
         self.dir_light = DirecLight()
 
-        self.id = ti.field(dtype=ti.i32, shape=())
+        self.hit_count = ti.field(dtype=ti.i32, shape=())
         self.bvh = BVH()
+
+        self.params: Dict = {}
+        self.update()
 
     def __getitem__(self, index: int):
         if 0 <= index < self.tri_ptr[None]:
@@ -101,8 +106,16 @@ class Meshes:
 
         return obj
 
+    def set_bvh(self, use_bvh: bool) -> None:
+        self.use_bvh[None] = use_bvh
+        self.update()
+
+    def update(self) -> None:
+        self.params["maximum"] = self.maximum[None]
+        self.params["use_bvh"] = self.use_bvh[None]
+
     def get_params(self) -> Dict:
-        return {"maximum": self.maximum}
+        return {"maximum": self.maximum[None], "use_bvh": self.use_bvh[None]}
 
     @overload
     def add_mesh(self, mesh: Mesh) -> None:
@@ -143,6 +156,7 @@ class Meshes:
     def make(self) -> None:
         for i in range(len(self.objects)):
             init4bbox(self.objects[i])
+
         for index, obj in enumerate(self.objects):
             label = self.label[index]
             if label[0] == ObjectTag.PBR and obj.emission.norm() > 0.0:
@@ -214,16 +228,16 @@ class Meshes:
 
     @ti.func
     def bvh_intersect(self, ray, tmin=TMIN, tmax=TMAX) -> BVHHitInfo:
-        obj_hitinfo = HitInfo(time=tmax)
-        hit_info = BVHHitInfo(hit=False, tmin=tmin, tmax=tmax, obj_id=-1)
+        bvh_hitinfo = BVHHitInfo(is_hit=False, tmin=tmin, tmax=tmax, obj_id=-1)
+        hitinfo = HitInfo(time=tmax)
 
-        stack = ti.Vector([0] * 512, dt=ti.i32)
+        stack = ti.Vector([0] * 1024, dt=ti.i32)
         stack_ptr = 0
 
         stack[0] = self.bvh.root_id
         stack_ptr += 1
 
-        obj = Triangle()
+        self.hit_count[None] = 0
 
         while stack_ptr > 0:
             stack_ptr -= 1
@@ -235,25 +249,35 @@ class Meshes:
             node = self.bvh.nodes[node_id]
 
             box_tmin, box_tmax = node.aabb.intersect(ray)
+            self.hit_count[None] += 1
 
             if bbox_valid(box_tmin, box_tmax):
                 if node.obj_id != -1:
                     if node.obj_id < self.tri_ptr[None]:
                         obj = self.mesh[node.obj_id]
 
-                        obj_hit = obj.intersect(ray, tmin, obj_hitinfo.time)
+                        obj_hit = obj.intersect(ray, tmin, hitinfo.time)
+                        self.hit_count[None] += 1
 
-                        if obj_hit.is_hit and obj_hit.time < obj_hitinfo.time:
-                            obj_hitinfo = obj_hit
-                            hit_info.is_hit = True
-                            hit_info.tmin = obj_hit.time
-                            hit_info.tmax = obj_hit.time
-                            hit_info.obj_id = node.obj_id
+                        if obj_hit.is_hit and obj_hit.time < hitinfo.time:
+                            hitinfo = obj_hit
+                            bvh_hitinfo.is_hit = True
+                            bvh_hitinfo.tmin = obj_hit.time
+                            bvh_hitinfo.tmax = obj_hit.time
+                            bvh_hitinfo.obj_id = node.obj_id
 
-                    """
                     elif node.obj_id < self.tri_ptr[None] + self.sphere_ptr[None]:
                         obj = self.spheres[node.obj_id - self.tri_ptr[None]]
-                    """
+
+                        obj_hit = obj.intersect(ray, tmin, hitinfo.time)
+                        self.hit_count[None] += 1
+
+                        if obj_hit.is_hit and obj_hit.time < hitinfo.time:
+                            hitinfo = obj_hit
+                            bvh_hitinfo.is_hit = True
+                            bvh_hitinfo.tmin = obj_hit.time
+                            bvh_hitinfo.tmax = obj_hit.time
+                            bvh_hitinfo.obj_id = node.obj_id
                 else:
                     if node.left_id != -1:
                         stack[stack_ptr] = node.left_id
@@ -262,11 +286,10 @@ class Meshes:
                         stack[stack_ptr] = node.right_id
                         stack_ptr += 1
 
-        return hit_info, obj_hitinfo
+        return bvh_hitinfo, hitinfo
 
     @ti.func
-    def intersect(self, ray: Ray, tmin=TMIN, tmax=TMAX):
-        """
+    def bruteforce_intersect(self, ray: Ray, tmin=TMIN, tmax=TMAX):
         hitinfo = HitInfo(time=tmax)
         hitinfo_tmp = HitInfo(time=tmax)
 
@@ -277,9 +300,8 @@ class Meshes:
                 hitinfo.time,
             )
 
-            if hitinfo_tmp.is_hit:
-                if hitinfo_tmp.time < hitinfo.time:
-                    hitinfo = hitinfo_tmp
+            if hitinfo_tmp.is_hit and hitinfo_tmp.time < hitinfo.time:
+                hitinfo = hitinfo_tmp
 
         for index in range(self.sphere_ptr[None]):
             hitinfo_tmp = self.spheres[index].intersect(
@@ -288,12 +310,14 @@ class Meshes:
                 hitinfo.time,
             )
 
-            if hitinfo_tmp.is_hit:
-                if hitinfo_tmp.time < hitinfo.time:
-                    hitinfo = hitinfo_tmp
+            if hitinfo_tmp.is_hit and hitinfo_tmp.time < hitinfo.time:
+                hitinfo = hitinfo_tmp
 
-        """
-        bvh_hitinfo, hitinfo = self.bvh_intersect(ray, tmin, tmax)
+        return hitinfo
+
+    @ti.func
+    def intersect(self, ray: Ray, tmin=TMIN, tmax=TMAX) -> HitInfo:
+        hitinfo = self.bruteforce_intersect(ray, tmin, tmax)
 
         return hitinfo
 
