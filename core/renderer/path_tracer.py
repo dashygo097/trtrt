@@ -7,14 +7,8 @@ from ..objects import Ray
 from ..utils.const import EPSILON, TMIN, ObjectTag
 from .base import Renderer
 from .sampler import Sampler
-from .utils import (
-    direct_remapping,
-    geometry_smith,
-    ggx_distribution,
-    reflect,
-    refract,
-    schlick_fresnel,
-)
+from .utils import (direct_remapping, geometry_smith, ggx_distribution,
+                    reflect, refract, schlick_fresnel)
 
 
 @ti.data_oriented
@@ -70,7 +64,7 @@ class PathTracer(Renderer):
         self.params["p_rr"] = self.p_rr[None]
 
     @ti.func
-    def _get_light_dir_noise(self, dir, noise):
+    def _get_light_dir_noise(self, dir: vec3, noise: ti.f32):
         return (
             dir
             + ti.Vector([ti.random() - 0.5, ti.random() - 0.5, ti.random() - 0.5])

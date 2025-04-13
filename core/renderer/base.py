@@ -63,7 +63,7 @@ class Renderer(ABC):
         )
 
     @ti.func
-    def sample_direct_light(self, scene, hit_point, hit_normal):
+    def sample_direct_light(self, scene, hit_point: vec3, hit_normal: vec3):
         direct_light = vec3(0.0)
         light_pos = vec3(0.0)
         light_dir = vec3(0.0)
@@ -108,7 +108,7 @@ class Renderer(ABC):
         return Ray(origin=hit_point, dir=light_dir), direct_light
 
     @ti.func
-    def sample_directional_light(self, scene, pos, normal):
+    def sample_directional_light(self, scene, pos: vec3, normal: vec3):
         dir_light = scene.dir_light.color
         light_dir = -scene.dir_light.dir
         # Add soft shadow
@@ -162,7 +162,7 @@ class Renderer(ABC):
         return ray
 
     @ti.func
-    def is_visible(self, scene, p1, p2) -> bool:
+    def is_visible(self, scene, p1: vec3, p2: vec3) -> bool:
         direction = (p2 - p1).normalized()
         distance = (p2 - p1).norm()
         shadow_ray = Ray(p1 + direction * TMIN, direction)

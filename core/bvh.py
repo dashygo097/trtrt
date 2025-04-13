@@ -50,6 +50,30 @@ class BVHNode:
 
 
 @ti.data_oriented
+class Stack:
+    def __init__(self, max_size: int) -> None:
+        self.max_size = max_size
+        self.data = ti.field(ti.i32, shape=(max_size,))
+        self.size = ti.field(ti.i32, shape=())
+
+    def is_empty(self) -> bool:
+        return self.size[None] == 0
+
+    @ti.func
+    def push(self, value: int) -> None:
+        if self.size[None] < self.max_size:
+            self.data[self.size[None]] = value
+            self.size[None] += 1
+
+    @ti.func
+    def pop(self) -> int:
+        if self.size[None] > 0:
+            self.size[None] -= 1
+            return self.data[self.size[None]]
+        return -1
+
+
+@ti.data_oriented
 class BVH:
     def __init__(self, objects: Optional[List] = None) -> None:
         self.objects: List = objects.copy() if objects is not None else []

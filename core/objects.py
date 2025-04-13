@@ -181,13 +181,6 @@ def init_triangle(triangle):
     triangle.bbox.min.z = ti.min(triangle.v0.z, triangle.v1.z, triangle.v2.z)
     triangle.bbox.max.z = ti.max(triangle.v0.z, triangle.v1.z, triangle.v2.z)
 
-    triangle.bbox.min.x -= TMIN * 2
-    triangle.bbox.max.x += TMIN * 2
-    triangle.bbox.min.y -= TMIN * 2
-    triangle.bbox.max.y += TMIN * 2
-    triangle.bbox.min.z -= TMIN * 2
-    triangle.bbox.max.z += TMIN * 2
-
 
 def init_sphere(sphere):
     sphere.bbox.min.x = sphere.center.x - sphere.radius

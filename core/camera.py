@@ -13,8 +13,8 @@ from .objects import Ray
 class Camera:
     def __init__(
         self,
-        fov=60,
-        aspect_ratio=1.0,
+        fov: int = 60,
+        aspect_ratio: float = 1.0,
     ) -> None:
         self.fov = ti.field(dtype=ti.f32, shape=())
         self.aspect_ratio = ti.field(dtype=ti.f32, shape=())

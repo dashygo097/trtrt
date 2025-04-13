@@ -1,16 +1,17 @@
 import taichi as ti
+from taichi.math import vec3
 
 from ..utils.const import EPSILON
 
 
 @ti.func
-def reflect(v, n):
+def reflect(v: vec3, n: vec3) -> vec3:
     return v - 2 * v.dot(n) * n
 
 
 @ti.func
-def refract(v, n, ior):
-    dir = ti.Vector([0.0, 0.0, 0.0])
+def refract(v: vec3, n: vec3, ior: ti.f32) -> vec3:
+    dir = vec3(0.0)
     cos_theta = -v.dot(n)
     eta = 1.0 / ior if cos_theta > 0 else ior
     normal = n if cos_theta > 0 else -n
@@ -26,13 +27,13 @@ def refract(v, n, ior):
 
 
 @ti.func
-def schlick_fresnel(cos_theta, ior):
+def schlick_fresnel(cos_theta: ti.f32, ior: ti.f32) -> ti.f32:
     r0 = ((1 - ior) / (1 + ior)) ** 2
     return r0 + (1 - r0) * (1 - cos_theta) ** 5
 
 
 @ti.func
-def ggx_distribution(n, h, roughness):
+def ggx_distribution(n: vec3, h: vec3, roughness: ti.f32) -> ti.f32:
     alpha = roughness * roughness
     alpha2 = alpha * alpha
     NdotH = ti.max(n.dot(h), 0.0)
@@ -45,23 +46,23 @@ def ggx_distribution(n, h, roughness):
 
 
 @ti.func
-def geometry_schlick_ggx(v, n, k):
+def geometry_schlick_ggx(v: vec3, n: vec3, k: ti.f32) -> ti.f32:
     NdotV = ti.max(n.dot(v), 0.0)
     return NdotV / (NdotV * (1 - k) + k)
 
 
 @ti.func
-def geometry_smith(v, n, l, k):
+def geometry_smith(v: vec3, n: vec3, l: vec3, k: ti.f32) -> ti.f32:
     ggx_v = geometry_schlick_ggx(v, n, k)
     ggx_l = geometry_schlick_ggx(l, n, k)
     return ggx_v * ggx_l
 
 
 @ti.func
-def direct_remapping(alpha):
+def direct_remapping(alpha: ti.f32) -> ti.f32:
     return (1 + alpha) * (1 + alpha) / 8.0
 
 
 @ti.func
-def ibr_remapping(alpha):
+def ibr_remapping(alpha: ti.f32) -> ti.f32:
     return alpha * alpha / 2.0

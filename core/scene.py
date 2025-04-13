@@ -318,7 +318,6 @@ class Meshes:
     @ti.func
     def intersect(self, ray: Ray, tmin=TMIN, tmax=TMAX) -> HitInfo:
         hitinfo = self.bruteforce_intersect(ray, tmin, tmax)
-
         return hitinfo
 
     def add_mesh(self, *args, **kwargs) -> None:

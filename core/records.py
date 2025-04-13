@@ -63,7 +63,7 @@ class VelocityBuffer:
                 self.velocity[i, j] = vec2(0.0)
 
     @ti.func
-    def project_world_position(self, world_pos, matrix):
+    def project_world_position(self, world_pos: vec3, matrix):
         pos = vec4(world_pos[0], world_pos[1], world_pos[2], 1.0)
         ndc_pos = vec3(0.0)
 

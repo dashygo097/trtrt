@@ -14,7 +14,7 @@ class Sampler:
         return self.__class__.__name__
 
     @ti.func
-    def hemispherical_sample(self, n):
+    def hemispherical_sample(self, n: vec3) -> vec3:
         u, v = ti.random(), ti.random()
         theta, phi = ti.acos(ti.sqrt(u)), v * 2 * ti.math.pi
 
@@ -36,7 +36,7 @@ class Sampler:
         return (result * ti.cos(theta) / ti.math.pi).normalized()
 
     @ti.func
-    def sample_cone(self, dir, angle):
+    def sample_cone(self, dir: vec3, angle: ti.f32) -> vec3:
         z_axis = dir
 
         temp = vec3(1.0, 0.0, 0.0)
@@ -55,7 +55,7 @@ class Sampler:
         return (z_axis + x * x_axis + y * y_axis).normalized()
 
     @ti.func
-    def ggx_sample(self, v, n, alpha):
+    def ggx_sample(self, v: vec3, n: vec3, alpha: ti.f32) -> vec3:
         u = ti.random()
         _v = ti.random()
 
