@@ -84,7 +84,6 @@ class PathTracer(Renderer):
                 luminance /= self.p_rr[None]
 
             hitinfo = scene.intersect(ray)
-            ti.static(print(hitinfo.tag))
             if hitinfo.is_hit and hitinfo.time > TMIN:
                 # PBR: Direct lighting
                 if hitinfo.tag == ObjectTag.PBR:
