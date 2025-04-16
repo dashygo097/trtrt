@@ -6,7 +6,7 @@ from taichi.math import vec3
 from ..objects import Ray
 from ..utils.const import EPSILON, TMIN, ObjectTag
 from .base import Renderer
-from .sampler import Sampler
+from .sampler import Sampler, UniformSampler
 from .utils import (direct_remapping, geometry_smith, ggx_distribution,
                     reflect, refract, schlick_fresnel)
 
@@ -15,7 +15,7 @@ from .utils import (direct_remapping, geometry_smith, ggx_distribution,
 class PathTracer(Renderer):
     def __init__(
         self,
-        sampler: Sampler = Sampler(),
+        sampler: Sampler = UniformSampler(),
         samples_per_pixel: int = 4,
         max_depth: int = 1,
         ambient_rate: float = 0.1,

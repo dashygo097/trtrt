@@ -5,14 +5,14 @@ from taichi.math import vec3
 
 from ..objects import Ray
 from .base import Renderer
-from .sampler import Sampler
+from .sampler import Sampler, UniformSampler
 
 
 @ti.data_oriented
 class Normal(Renderer):
     def __init__(
         self,
-        sampler: Sampler = Sampler(),
+        sampler: Sampler = UniformSampler(),
         samples_per_pixel: int = 4,
     ) -> None:
         self.params: Dict = {}

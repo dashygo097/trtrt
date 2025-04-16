@@ -7,14 +7,14 @@ from taichi.math import vec3
 from ..objects import Ray
 from ..records import GBuffer
 from ..utils.const import FAR_Z, NEAR_Z, TMIN
-from .sampler import Sampler
+from .sampler import Sampler, UniformSampler
 
 
 @ti.data_oriented
 class Renderer(ABC):
     def __init__(
         self,
-        sampler: Sampler = Sampler(),
+        sampler: Sampler = UniformSampler(),
         samples_per_pixel: int = 4,
     ) -> None:
         self.sampler = sampler

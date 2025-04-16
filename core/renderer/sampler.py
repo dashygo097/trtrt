@@ -1,21 +1,32 @@
+import importlib.resources as resources
+from abc import ABC, abstractmethod
+
+import numpy as np
 import taichi as ti
+from PIL import Image
 from taichi.math import vec3
 
+from .. import assets
 from ..utils.const import EPSILON
 from .utils import reflect
 
 
 @ti.data_oriented
-class Sampler:
+class Sampler(ABC):
     def __init__(self) -> None:
         pass
 
     def _name(self) -> str:
         return self.__class__.__name__
 
+    @abstractmethod
+    @ti.func
+    def kernel(self) -> ti.f32:
+        return 0.0
+
     @ti.func
     def hemispherical_sample(self, n: vec3) -> vec3:
-        u, v = ti.random(), ti.random()
+        u, v = self.kernel(), self.kernel()
         theta, phi = ti.acos(ti.sqrt(u)), v * 2 * ti.math.pi
 
         x = ti.sin(theta) * ti.cos(phi)
@@ -46,8 +57,8 @@ class Sampler:
         x_axis = temp.cross(z_axis).normalized()
         y_axis = z_axis.cross(x_axis).normalized()
 
-        r = ti.sqrt(ti.random()) * ti.tan(angle / 180 * ti.math.pi)
-        theta = 2.0 * ti.math.pi * ti.random()
+        r = ti.sqrt(self.kernel()) * ti.tan(angle / 180 * ti.math.pi)
+        theta = 2.0 * ti.math.pi * self.kernel()
 
         x = r * ti.cos(theta)
         y = r * ti.sin(theta)
@@ -56,8 +67,7 @@ class Sampler:
 
     @ti.func
     def ggx_sample(self, v: vec3, n: vec3, alpha: ti.f32) -> vec3:
-        u = ti.random()
-        _v = ti.random()
+        u, _v = self.kernel(), self.kernel()
 
         alpha2 = alpha * alpha
 
@@ -82,3 +92,35 @@ class Sampler:
         l = reflect(-v, world_h)
 
         return l.normalized()
+
+
+@ti.data_oriented
+class UniformSampler(Sampler):
+    def __init__(self) -> None:
+        super().__init__()
+
+    @ti.func
+    def kernel(self):
+        return ti.random(ti.f32)
+
+
+@ti.data_oriented
+class BlueNoiseSampler(Sampler):
+    def __init__(self) -> None:
+        super().__init__()
+        with resources.open_binary(assets, "BlueNoise470.png") as f:
+            bluenoise = Image.open(f)
+            bluenoise = bluenoise.convert("L")
+            bluenoise = np.array(bluenoise).astype(np.float32) / 255.0
+
+            f.close()
+
+        self.blue_noise = ti.field(dtype=ti.f32, shape=bluenoise.shape)
+        self.blue_noise.from_numpy(bluenoise)
+
+    @ti.func
+    def kernel(self):
+        return self.blue_noise[
+            ti.random(ti.i32) % self.blue_noise.shape[0],
+            ti.random(ti.i32) % self.blue_noise.shape[1],
+        ]
