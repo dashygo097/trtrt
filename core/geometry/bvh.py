@@ -1,10 +1,11 @@
+from operator import is_
 from random import randint
 from typing import List, Optional
 
 import taichi as ti
 from taichi.math import vec3
 
-from ..utils.const import EPSILON
+from ..utils.const import EPSILON, TMAX, TMIN
 
 
 @ti.dataclass
@@ -19,18 +20,16 @@ class AABB:
         )
 
     @ti.func
-    def intersect(self, ray):
-        inv_dir = 1.0 / (ray.dir + EPSILON)
-        t0 = (self.min - ray.origin) * inv_dir
-        t1 = (self.max - ray.origin) * inv_dir
-        t_min = ti.max(ti.min(t0, t1))
-        t_max = ti.min(ti.max(t0, t1))
-        return t_min, t_max
+    def intersect(self, ray, tmin=TMIN, tmax=TMAX):
+        is_hit = True
+        for i in range(3):
+            inv_d = 1.0 / ray.dir[i]
+            t0 = (self.min[i] - ray.origin[i]) * inv_d
+            t1 = (self.max[i] - ray.origin[i]) * inv_d
+            if inv_d < 0:
+                t0, t1 = t1, t0
 
-
-@ti.func
-def bbox_valid(tmin: vec3, tmax: vec3) -> bool:
-    return (tmin.x <= tmax.x) and (tmin.y <= tmax.y) and (tmin.z <= tmax.z)
+        return is_hit
 
 
 def get_centroid(aabb: AABB) -> vec3:

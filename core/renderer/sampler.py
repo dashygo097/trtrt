@@ -120,6 +120,7 @@ class BlueNoiseSampler(Sampler):
 
     @ti.func
     def kernel(self):
+        # FIXIT: If use ti.random(ti.i32) here, then it is not blue noise actually
         return self.blue_noise[
             ti.random(ti.i32) % self.blue_noise.shape[0],
             ti.random(ti.i32) % self.blue_noise.shape[1],

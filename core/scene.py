@@ -5,7 +5,7 @@ import taichi as ti
 from taichi.math import vec3
 from termcolor import colored
 
-from .geometry.bvh import BVH, Stack, bbox_valid
+from .geometry.bvh import BVH, Stack
 from .geometry.mesh import Mesh
 from .objects import DirecLight, Ray, Sphere, Triangle, init4bbox
 from .records import BVHHitInfo, HitInfo
@@ -186,8 +186,10 @@ class Scene:
         stack_ptr = 1
 
         self.hit_count[None] = 0
+        box_tmin = TMIN
+        box_tmax = TMAX
 
-        for _ in range(512):
+        for _ in range(64):
             if stack_ptr == 0:
                 break
 
@@ -198,10 +200,10 @@ class Scene:
                 continue
 
             node = self.bvh.nodes[node_id]
-            box_tmin, box_tmax = node.aabb.intersect(ray)
+            is_hit = node.aabb.intersect(ray, bvh_hitinfo.tmin, bvh_hitinfo.tmax)
             self.hit_count[None] += 1
 
-            if bbox_valid(box_tmin, box_tmax):
+            if is_hit:
                 if node.obj_id != -1:
                     if node.obj_id < self.tri_ptr[None]:
                         obj = self.mesh[node.obj_id]
@@ -240,6 +242,7 @@ class Scene:
     def bruteforce_intersect(self, ray: Ray, tmin=TMIN, tmax=TMAX) -> HitInfo:
         hitinfo = HitInfo(time=tmax)
         hitinfo_tmp = HitInfo(time=tmax)
+        self.hit_count[None] = 0
 
         for index in range(self.tri_ptr[None]):
             hitinfo_tmp = self.mesh[index].intersect(
@@ -247,6 +250,7 @@ class Scene:
                 tmin,
                 hitinfo.time,
             )
+            self.hit_count[None] += 1
 
             if hitinfo_tmp.is_hit and hitinfo_tmp.time < hitinfo.time:
                 hitinfo = hitinfo_tmp
@@ -257,6 +261,7 @@ class Scene:
                 tmin,
                 hitinfo.time,
             )
+            self.hit_count[None] += 1
 
             if hitinfo_tmp.is_hit and hitinfo_tmp.time < hitinfo.time:
                 hitinfo = hitinfo_tmp

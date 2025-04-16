@@ -158,4 +158,4 @@ class FrontEnd:
             # NOTE: Profiler
             # ti.profiler.print_kernel_profiler_info("trace")
             # ti.profiler.clear_kernel_profiler_info()
-            # print(self.scene.hit_count[None])
+            print(self.scene.hit_count[None])
