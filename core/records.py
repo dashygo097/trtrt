@@ -11,7 +11,10 @@ class HitInfo:
     pos: vec3
     normal: vec3
     front: ti.u1
-    tag: ti.i32
+    tag: ti.u32
+    id: ti.u32
+    u: ti.f32
+    v: ti.f32
 
     albedo: vec3
     metallic: ti.f32

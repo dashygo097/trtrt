@@ -109,7 +109,7 @@ def load_room():
         color=vec3(1.0, 1.0, 1.0),
     )
 
-    s = g.Meshes()
+    s = g.Scene()
     s.set_bg(vec3(0.0, 0.4, 1.0))
     s.add_obj([floor, blank, room, triangle, sphere, light1, light2])
     s.set_dir_light(light3)

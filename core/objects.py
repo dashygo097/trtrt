@@ -1,7 +1,7 @@
 import taichi as ti
 from taichi.math import vec3
 
-from .bvh import AABB
+from .geometry.bvh import AABB
 from .records import HitInfo
 from .utils.const import EPSILON, TMAX, TMIN
 
@@ -39,6 +39,8 @@ class Triangle:
         hit_pos = vec3(0.0)
         hit_normal = vec3(0.0)
         hit_front = False
+        u = 0.0
+        v = 0.0
 
         edge1 = self.v1 - self.v0
         edge2 = self.v2 - self.v0
@@ -67,6 +69,8 @@ class Triangle:
             normal=hit_normal,
             front=hit_front,
             tag=self.tag,
+            u=u,
+            v=v,
             albedo=self.albedo,
             metallic=self.metallic,
             roughness=self.roughness,
@@ -111,6 +115,8 @@ class Sphere:
         hit_pos = vec3(0.0)
         hit_normal = vec3(0.0)
         hit_front = False
+        u = 0.0
+        v = 0.0
 
         oc = ray.origin - self.center
         a = ray.dir.dot(ray.dir)
@@ -127,6 +133,8 @@ class Sphere:
                 hit_pos = ray.at(t)
                 hit_normal = (hit_pos - self.center).normalized()
                 hit_front = ray.dir.dot(hit_normal) > 0
+                u = 0.5 + ti.atan2(hit_normal.z, hit_normal.x) / (2 * ti.math.pi)
+                v = 0.5 - ti.asin(hit_normal.y) / ti.math.pi
                 if hit_front:
                     hit_normal = -hit_normal
         return HitInfo(
@@ -136,6 +144,8 @@ class Sphere:
             normal=hit_normal,
             front=hit_front,
             tag=self.tag,
+            u=u,
+            v=v,
             albedo=self.albedo,
             metallic=self.metallic,
             roughness=self.roughness,

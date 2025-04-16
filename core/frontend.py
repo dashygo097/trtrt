@@ -5,12 +5,12 @@ import taichi as ti
 from termcolor import colored
 
 from .camera import Camera
-from .frontend_utils.input_tracer import InputTracer
 from .objects import Ray
 from .postprocess import JointBilateralFilter, ProcessorCore, ToneMapping
 from .records import GBuffer, VelocityBuffer
 from .renderer import Albedo, Renderer
-from .scene import Meshes
+from .scene import Scene
+from .ui.input_tracer import InputTracer
 
 
 @ti.data_oriented
@@ -28,7 +28,7 @@ class FrontEnd:
         self.gui = self.window.get_gui()
         self.input_tracer = InputTracer(self.window, pixels=self.pixels)
         self.camera = Camera()
-        self.scene = Meshes()
+        self.scene = Scene()
         self.renderer = Albedo()
         self.post_processors: List[ProcessorCore] = []
 
@@ -56,7 +56,7 @@ class FrontEnd:
         self.camera = camera
         self.velocity_buffer = VelocityBuffer(self.res, self.camera)
 
-    def set_scene(self, scene: Meshes) -> None:
+    def set_scene(self, scene: Scene) -> None:
         self.scene = scene
         self.scene.make()
 
@@ -79,7 +79,7 @@ class FrontEnd:
         )
 
     def ui(self) -> None:
-        from .frontend_utils.gui import make_ui
+        from .ui.gui import make_ui
 
         make_ui(self)
 

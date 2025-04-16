@@ -1,68 +1,19 @@
-from typing import Dict, List, Optional, Union, overload
+from typing import Dict, List, Union, overload
 
 import numpy as np
 import taichi as ti
 from taichi.math import vec3
 from termcolor import colored
 
-from .bvh import BVH, Stack, bbox_valid
+from .geometry.bvh import BVH, Stack, bbox_valid
+from .geometry.mesh import Mesh
 from .objects import DirecLight, Ray, Sphere, Triangle, init4bbox
 from .records import BVHHitInfo, HitInfo
-from .utils.const import TMAX, TMIN, ObjectShape, ObjectTag, PBRPreset
-from .utils.loader import load_obj
+from .utils.const import TMAX, TMIN, ObjectShape, ObjectTag
 
 
 @ti.data_oriented
-class Mesh:
-    # TODO: Implement the triangle mesh and provide interface for the 'Meshes' cls
-    def __init__(self) -> None:
-        pass
-
-    def load(
-        self,
-        tag: int,
-        vertices: np.ndarray,
-        indices: Optional[np.ndarray] = None,
-        **kwargs,
-    ) -> None:
-        self.tag = tag
-        self.vertices = ti.Vector.field(
-            vertices.shape[1], dtype=ti.f32, shape=vertices.shape[0]
-        )
-        self.vertices.from_numpy(vertices)
-        if indices is not None:
-            self.indices = ti.Vector.field(
-                indices.shape[1], dtype=ti.i32, shape=indices.shape[0]
-            )
-            self.indices.from_numpy(indices)
-
-        else:
-            self.indices = None
-
-        self.kwargs = kwargs
-        self.albedo = kwargs.get("albedo", vec3(0.0))
-        self.metallic = kwargs.get("metallic", 0.0)
-        self.roughness = kwargs.get("roughness", 0.0)
-        self.emission = kwargs.get("emission", vec3(0.0))
-
-    def load_file(
-        self,
-        tag: int,
-        obj_file: str,
-        **kwargs,
-    ) -> None:
-        obj = load_obj(obj_file)
-        self.load(tag, obj["vertices"], obj["indices"], **kwargs)
-
-    def use(self, preset: PBRPreset) -> None:
-        config = preset.value
-        self.metallic.get(config["metallic"], 0.0)
-        self.roughness.get(config["roughness"], 0.0)
-        self.emission.get(config["emission"], vec3(0.0))
-
-
-@ti.data_oriented
-class Meshes:
+class Scene:
     def __init__(self, maximum: int = 32, use_bvh: bool = False) -> None:
         self.maximum = ti.field(ti.i32, shape=())
         self.use_bvh = ti.field(ti.u1, shape=())

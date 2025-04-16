@@ -47,7 +47,7 @@ def load_cornellbox():
         emission=vec3(10.0),
     )
 
-    s = g.Meshes()
+    s = g.Scene()
     s.add_obj(floor)
     s.add_obj(left)
     s.add_obj(right)

@@ -4,7 +4,7 @@ from typing import List, Optional
 import taichi as ti
 from taichi.math import vec3
 
-from .utils.const import EPSILON
+from ..utils.const import EPSILON
 
 
 @ti.dataclass
