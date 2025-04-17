@@ -46,17 +46,6 @@ class AABB:
         )
 
 
-def sort_key(obj, axis: int) -> float:
-    if obj.shape == ObjectShape.TRIANGLE:
-        return obj.bbox.min[axis]
-    elif obj.shape == ObjectShape.SPHERE:
-        return obj.entity.bbox.min[axis] - 2 * TMAX
-
-
-def sort_objects(objects: List, axis: int) -> List:
-    return sorted(objects, key=lambda obj: obj.entity.bbox.min[axis])
-
-
 @ti.dataclass
 class BVHNode:
     aabb: AABB
@@ -182,3 +171,17 @@ class BVH:
                 print_node(node.right_id, new_indent, True)
 
         print_node(self.root_id)
+
+
+def sort_key(obj, axis: int):
+    if obj.shape == ObjectShape.TRIANGLE:
+        return obj.entity.bbox.min[axis]
+    elif obj.shape == ObjectShape.SPHERE:
+        return obj.entity.bbox.min[axis] + 2 * TMAX
+
+    else:
+        raise ValueError(f"Unsupported object shape: {obj.shape}")
+
+
+def sort_objects(objects: List, axis: int) -> List:
+    return sorted(objects, key=lambda obj: sort_key(obj, axis))

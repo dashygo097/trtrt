@@ -1,4 +1,4 @@
-from typing import Dict, List, Union, overload
+from typing import List, Union, overload
 
 import numpy as np
 import taichi as ti
@@ -15,7 +15,7 @@ from .utils.const import TMAX, TMIN, ObjectShape, ObjectTag
 
 @ti.data_oriented
 class Scene:
-    def __init__(self, maximum: int = 32, use_bvh: bool = False) -> None:
+    def __init__(self, maximum: int = 100) -> None:
         self.maximum = maximum
 
         self.objects: List[Abstraction] = []
@@ -85,61 +85,6 @@ class Scene:
     @overload
     def add_obj(self, objs: List) -> None:
         self.add_obj(objs)
-
-    def make(self) -> None:
-        for i in range(len(self.objects)):
-            init4bbox(self.objects[i].entity)
-
-        self.bvh.set_objects(self.objects)
-        self.bvh.build()
-
-        self.bvh.pretty_print()
-        self.bvh.info()
-
-        for index, obj in enumerate(self.objects):
-            if obj.shape == ObjectTag.PBR and obj.entity.emission.norm() > 0.0:
-                self.light_map[self.light_ptr[None]] = index
-                self.light_ptr[None] += 1
-
-            if obj.shape == ObjectShape.TRIANGLE:
-                self.mesh[self.tri_ptr[None]] = obj.entity
-                self.tri_ptr[None] += 1
-            elif obj.shape == ObjectShape.SPHERE:
-                self.spheres[self.sphere_ptr[None]] = obj.entity
-                self.sphere_ptr[None] += 1
-
-        self.info()
-
-    def info(self) -> None:
-        has_directional_light = 1 if self.dir_light.color.norm() > 0.0 else 0
-        print("[INFO] BUILD SUCCESS!")
-        print(
-            "[INFO] "
-            + colored("Number of ", attrs=["bold"])
-            + colored("Triangles", "green", attrs=["bold"])
-            + colored(f": {self.tri_ptr[None]}", attrs=["bold"])
-        )
-        print(
-            "[INFO] "
-            + colored("Number of ", attrs=["bold"])
-            + colored("Spheres", "red", attrs=["bold"])
-            + colored(f": {self.sphere_ptr[None]}", attrs=["bold"])
-        )
-        print(
-            "[INFO] "
-            + colored("Number of ", attrs=["bold"])
-            + colored("Light Emitters", "yellow", attrs=["bold"])
-            + colored(
-                f": {self.light_ptr[None]}",
-                attrs=["bold"],
-            )
-        )
-        if has_directional_light:
-            print(
-                "[INFO] "
-                + colored("Has ", attrs=["bold"])
-                + colored("Directional Light", "yellow", attrs=["bold"])
-            )
 
     def set_bg(self, color: ti.Vector) -> None:
         self.bg_top = color
@@ -230,6 +175,61 @@ class Scene:
     def intersect(self, ray: Ray, tmin=TMIN, tmax=TMAX) -> HitInfo:
         hitinfo = self.bvh_intersect(ray, tmin, tmax)
         return hitinfo
+
+    def make(self) -> None:
+        for i in range(len(self.objects)):
+            init4bbox(self.objects[i].entity)
+
+        self.bvh.set_objects(self.objects)
+        self.bvh.build()
+
+        self.bvh.pretty_print()
+        self.bvh.info()
+
+        for index, obj in enumerate(self.objects):
+            if obj.tag == ObjectTag.PBR and obj.entity.emission.norm() > 0.0:
+                self.light_map[self.light_ptr[None]] = index
+                self.light_ptr[None] += 1
+
+            if obj.shape == ObjectShape.TRIANGLE:
+                self.mesh[self.tri_ptr[None]] = obj.entity
+                self.tri_ptr[None] += 1
+            elif obj.shape == ObjectShape.SPHERE:
+                self.spheres[self.sphere_ptr[None]] = obj.entity
+                self.sphere_ptr[None] += 1
+
+        self.info()
+
+    def info(self) -> None:
+        has_directional_light = 1 if self.dir_light.color.norm() > 0.0 else 0
+        print("[INFO] BUILD SUCCESS!")
+        print(
+            "[INFO] "
+            + colored("Number of ", attrs=["bold"])
+            + colored("Triangles", "green", attrs=["bold"])
+            + colored(f": {self.tri_ptr[None]}", attrs=["bold"])
+        )
+        print(
+            "[INFO] "
+            + colored("Number of ", attrs=["bold"])
+            + colored("Spheres", "red", attrs=["bold"])
+            + colored(f": {self.sphere_ptr[None]}", attrs=["bold"])
+        )
+        print(
+            "[INFO] "
+            + colored("Number of ", attrs=["bold"])
+            + colored("Light Emitters", "yellow", attrs=["bold"])
+            + colored(
+                f": {self.light_ptr[None]}",
+                attrs=["bold"],
+            )
+        )
+        if has_directional_light:
+            print(
+                "[INFO] "
+                + colored("Has ", attrs=["bold"])
+                + colored("Directional Light", "yellow", attrs=["bold"])
+            )
 
     def add_mesh(self, *args, **kwargs) -> None:
         if len(args) == 1 and isinstance(args[0], Mesh):
