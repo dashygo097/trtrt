@@ -5,10 +5,11 @@ import taichi as ti
 from taichi.math import vec3
 from termcolor import colored
 
-from .geometry.bvh import BVH, Stack
+from .geometry.bvh import BVH
 from .geometry.mesh import Mesh
 from .objects import DirecLight, Ray, Sphere, Triangle, init4bbox
 from .records import BVHHitInfo, HitInfo
+from .utils.abstract import Abstraction
 from .utils.const import TMAX, TMIN, ObjectShape, ObjectTag
 
 
@@ -16,11 +17,8 @@ from .utils.const import TMAX, TMIN, ObjectShape, ObjectTag
 class Scene:
     def __init__(self, maximum: int = 32, use_bvh: bool = False) -> None:
         self.maximum = maximum
-        self.use_bvh = ti.field(ti.u1, shape=())
-        self.use_bvh[None] = use_bvh
 
-        self.objects = []
-        self.labels = []
+        self.objects: List[Abstraction] = []
 
         self.light_ptr = ti.field(dtype=ti.i32, shape=())
         self.light_map = ti.field(dtype=ti.i32, shape=maximum)
@@ -41,11 +39,6 @@ class Scene:
         self.dir_light = DirecLight()
 
         self.bvh = BVH()
-        self.stack = Stack(maximum * 2)
-        self.hit_count = ti.field(dtype=ti.i32, shape=())
-
-        self.params: Dict = {}
-        self.update()
 
     def __getitem__(self, index: int):
         if 0 <= index < self.tri_ptr[None]:
@@ -56,17 +49,6 @@ class Scene:
             raise IndexError("Index out of range")
 
         return obj
-
-    def set_bvh(self, use_bvh: bool) -> None:
-        self.use_bvh[None] = use_bvh
-        self.update()
-
-    def update(self) -> None:
-        self.params["maximum"] = self.maximum
-        self.params["use_bvh"] = self.use_bvh[None]
-
-    def get_params(self) -> Dict:
-        return {"maximum": self.maximum[None], "use_bvh": self.use_bvh[None]}
 
     @overload
     def add_mesh(self, mesh: Mesh) -> None:
@@ -106,7 +88,7 @@ class Scene:
 
     def make(self) -> None:
         for i in range(len(self.objects)):
-            init4bbox(self.objects[i])
+            init4bbox(self.objects[i].entity)
 
         self.bvh.set_objects(self.objects)
         self.bvh.build()
@@ -115,16 +97,15 @@ class Scene:
         self.bvh.info()
 
         for index, obj in enumerate(self.objects):
-            labels = self.labels[index]
-            if labels[0] == ObjectTag.PBR and obj.emission.norm() > 0.0:
+            if obj.shape == ObjectTag.PBR and obj.entity.emission.norm() > 0.0:
                 self.light_map[self.light_ptr[None]] = index
                 self.light_ptr[None] += 1
 
-            if labels[1] == ObjectShape.TRIANGLE:
-                self.mesh[self.tri_ptr[None]] = obj
+            if obj.shape == ObjectShape.TRIANGLE:
+                self.mesh[self.tri_ptr[None]] = obj.entity
                 self.tri_ptr[None] += 1
-            elif labels[1] == ObjectShape.SPHERE:
-                self.spheres[self.sphere_ptr[None]] = obj
+            elif obj.shape == ObjectShape.SPHERE:
+                self.spheres[self.sphere_ptr[None]] = obj.entity
                 self.sphere_ptr[None] += 1
 
         self.info()
@@ -172,17 +153,15 @@ class Scene:
         self.dir_light = dir_light
 
     @ti.func
-    def bvh_intersect(self, ray, tmin=TMIN, tmax=TMAX) -> BVHHitInfo:
+    def bvh_intersect(self, ray, tmin=TMIN, tmax=TMAX) -> HitInfo:
         bvh_hitinfo = BVHHitInfo(is_hit=False, tmin=tmin, tmax=tmax)
         bvh_hitinfo_tmp = BVHHitInfo(is_hit=False, tmin=tmin, tmax=tmax)
         hitinfo = HitInfo(time=tmax)
         obj_hit = HitInfo(is_hit=False, time=tmax)
 
-        stack = ti.Vector([-1] * 64, dt=ti.i32)
+        stack = ti.Vector([-1] * self.maximum * 2, dt=ti.i32)
         stack[0] = self.bvh.root_id
         stack_ptr = 1
-
-        self.hit_count[None] = 0
 
         for _ in range(self.maximum * 2):
             if stack_ptr == 0:
@@ -198,7 +177,6 @@ class Scene:
             bvh_hitinfo_tmp = node.aabb.intersect(
                 ray, bvh_hitinfo.tmin, bvh_hitinfo.tmax
             )
-            self.hit_count[None] += 1
 
             if bvh_hitinfo_tmp.is_hit:
                 if (
@@ -211,12 +189,10 @@ class Scene:
                     if node.obj_id < self.tri_ptr[None]:
                         obj = self.mesh[node.obj_id]
                         obj_hit = obj.intersect(ray, tmin, hitinfo.time)
-                        self.hit_count[None] += 1
 
                     elif node.obj_id < self.tri_ptr[None] + self.sphere_ptr[None]:
                         obj = self.spheres[node.obj_id - self.tri_ptr[None]]
                         obj_hit = obj.intersect(ray, tmin, hitinfo.time)
-                        self.hit_count[None] += 1
 
                     if obj_hit.is_hit and obj_hit.time < hitinfo.time:
                         hitinfo = obj_hit
@@ -229,24 +205,21 @@ class Scene:
                         stack[stack_ptr] = node.right_id
                         stack_ptr += 1
 
-        return bvh_hitinfo, hitinfo
+        return hitinfo
 
     @ti.func
     def bruteforce_intersect(self, ray: Ray, tmin=TMIN, tmax=TMAX) -> HitInfo:
         hitinfo = HitInfo(time=tmax)
         hitinfo_tmp = HitInfo(time=tmax)
-        self.hit_count[None] = 0
 
         for index in range(self.tri_ptr[None]):
             hitinfo_tmp = self.mesh[index].intersect(ray, tmin, hitinfo.time)
-            self.hit_count[None] += 1
 
             if hitinfo_tmp.is_hit and hitinfo_tmp.time < hitinfo.time:
                 hitinfo = hitinfo_tmp
 
         for index in range(self.sphere_ptr[None]):
             hitinfo_tmp = self.spheres[index].intersect(ray, tmin, hitinfo.time)
-            self.hit_count[None] += 1
 
             if hitinfo_tmp.is_hit and hitinfo_tmp.time < hitinfo.time:
                 hitinfo = hitinfo_tmp
@@ -255,7 +228,7 @@ class Scene:
 
     @ti.func
     def intersect(self, ray: Ray, tmin=TMIN, tmax=TMAX) -> HitInfo:
-        _, hitinfo = self.bvh_intersect(ray, tmin, tmax)
+        hitinfo = self.bvh_intersect(ray, tmin, tmax)
         return hitinfo
 
     def add_mesh(self, *args, **kwargs) -> None:
@@ -291,12 +264,10 @@ class Scene:
     def add_obj(self, *args, **kwargs) -> None:
         if len(args) == 1 and isinstance(args[0], Triangle):
             obj = args[0]
-            self.labels.append((obj.tag, ObjectShape.TRIANGLE))
-            self.objects.append(obj)
+            self.objects.append(Abstraction(obj))
         elif len(args) == 1 and isinstance(args[0], Sphere):
             obj = args[0]
-            self.labels.append((obj.tag, ObjectShape.SPHERE))
-            self.objects.append(obj)
+            self.objects.append(Abstraction(obj))
         elif len(args) == 1 and isinstance(args[0], Mesh):
             obj = args[0]
             self.add_mesh(obj)

@@ -7,7 +7,7 @@ ti.init(arch=ti.gpu)
 res = (800, 800)
 
 s, c = load_room()
-r = g.Normal(sampler=g.UniformSampler(), samples_per_pixel=1)
+r = g.PathTracer(sampler=g.UniformSampler(), samples_per_pixel=1, max_depth=4)
 
 
 def room_main():

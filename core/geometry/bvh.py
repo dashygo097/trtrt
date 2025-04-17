@@ -5,7 +5,7 @@ import taichi as ti
 from taichi.math import vec3
 
 from ..records import BVHHitInfo
-from ..utils.const import EPSILON, TMAX, TMIN
+from ..utils.const import TMAX, TMIN
 
 
 @ti.dataclass
@@ -47,7 +47,7 @@ class AABB:
 
 
 def sort_objects(objects: List, axis: int) -> List:
-    return sorted(objects, key=lambda obj: obj.bbox.min[axis])
+    return sorted(objects, key=lambda obj: obj.entity.bbox.min[axis])
 
 
 @ti.dataclass
@@ -56,38 +56,6 @@ class BVHNode:
     left_id: ti.i32
     right_id: ti.i32
     obj_id: ti.i32
-
-
-@ti.data_oriented
-class Stack:
-    def __init__(self, max_size: int) -> None:
-        self.max_size = ti.field(ti.i32, shape=())
-        self.data = ti.field(ti.i32, shape=(max_size,))
-        self.size = ti.field(ti.i32, shape=())
-
-        self.max_size[None] = max_size
-
-    @ti.func
-    def is_empty(self) -> bool:
-        return self.size[None] == 0
-
-    @ti.func
-    def clear(self) -> None:
-        self.size[None] = 0
-
-    @ti.func
-    def push(self, value: int) -> None:
-        if self.size[None] < self.max_size[None]:
-            self.data[self.size[None]] = value
-            self.size[None] += 1
-
-    @ti.func
-    def pop(self) -> ti.i32:
-        data = -1
-        if self.size[None] > 0:
-            self.size[None] -= 1
-            data = self.data[self.size[None]]
-        return data
 
 
 @ti.data_oriented
@@ -114,7 +82,7 @@ class BVH:
         self.used_nodes += 1
 
         if end - start == 1:
-            obj = objects[start]  # Use start index, not used_nodes
+            obj = objects[start].entity  # Use start index, not used_nodes
             self.nodes[used_nodes] = BVHNode(
                 aabb=obj.bbox,
                 left_id=-1,
