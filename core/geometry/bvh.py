@@ -102,33 +102,33 @@ class BVH:
         self.labels = []
         max_nodes = len(self.objects) * 2 + 1
         self.nodes = BVHNode.field(shape=(max_nodes,))
-        self.nodes_id = ti.field(ti.i32, shape=())
-        self.nodes_id[None] = 0
+
+        self.used_nodes = 0
         self.root_id = -1
 
     def build(self) -> None:
         self.root_id = self._build(self.objects, 0, len(self.objects))
 
     def _build(self, objects: List, start: int, end: int) -> int:
-        nodes_id = self.nodes_id[None]
-        self.nodes_id[None] += 1
+        used_nodes = self.used_nodes
+        self.used_nodes += 1
 
         if end - start == 1:
-            obj = objects[start]  # Use start index, not nodes_id
-            self.nodes[nodes_id] = BVHNode(
+            obj = objects[start]  # Use start index, not used_nodes
+            self.nodes[used_nodes] = BVHNode(
                 aabb=obj.bbox,
                 left_id=-1,
                 right_id=-1,
                 obj_id=start,
             )
-            return nodes_id
+            return used_nodes
 
         axis = randint(0, 2)
         objects[start:end] = sort_objects(objects[start:end], axis)
 
         mid = start + (end - start) // 2
 
-        self.nodes[nodes_id] = BVHNode(
+        self.nodes[used_nodes] = BVHNode(
             aabb=AABB(vec3(0), vec3(0)),
             left_id=-1,
             right_id=-1,
@@ -137,19 +137,19 @@ class BVH:
 
         left_id = self._build(objects, start, mid)
         right_id = self._build(objects, mid, end)
-        self.nodes[nodes_id].aabb = self.nodes[left_id].aabb.union(
+        self.nodes[used_nodes].aabb = self.nodes[left_id].aabb.union(
             self.nodes[right_id].aabb
         )
 
-        self.nodes[nodes_id].left_id = left_id
-        self.nodes[nodes_id].right_id = right_id
+        self.nodes[used_nodes].left_id = left_id
+        self.nodes[used_nodes].right_id = right_id
 
-        return nodes_id
+        return used_nodes
 
     def info(self) -> None:
         print(f"BVH Info:")
         print(f"  Number of objects: {len(self.objects)}")
-        print(f"  Number of nodes: {self.nodes_id[None]}")
+        print(f"  Number of nodes: {self.used_nodes}")
         print(f"  Root node ID: {self.root_id}")
 
         depths = []

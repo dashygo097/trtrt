@@ -15,9 +15,8 @@ from .utils.const import TMAX, TMIN, ObjectShape, ObjectTag
 @ti.data_oriented
 class Scene:
     def __init__(self, maximum: int = 32, use_bvh: bool = False) -> None:
-        self.maximum = ti.field(ti.i32, shape=())
+        self.maximum = maximum
         self.use_bvh = ti.field(ti.u1, shape=())
-        self.maximum[None] = maximum * 2
         self.use_bvh[None] = use_bvh
 
         self.objects = []
@@ -35,12 +34,14 @@ class Scene:
         self.light_ptr[None] = 0
         self.tri_ptr[None] = 0
         self.sphere_ptr[None] = 0
+
         self.bg_top = vec3(0.0)
         self.bg_bottom = vec3(0.0)
+
         self.dir_light = DirecLight()
 
         self.bvh = BVH()
-        self.stack = Stack(maximum * 4)
+        self.stack = Stack(maximum * 2)
         self.hit_count = ti.field(dtype=ti.i32, shape=())
 
         self.params: Dict = {}
@@ -61,7 +62,7 @@ class Scene:
         self.update()
 
     def update(self) -> None:
-        self.params["maximum"] = self.maximum[None]
+        self.params["maximum"] = self.maximum
         self.params["use_bvh"] = self.use_bvh[None]
 
     def get_params(self) -> Dict:
@@ -183,7 +184,7 @@ class Scene:
 
         self.hit_count[None] = 0
 
-        for _ in range(64):
+        for _ in range(self.maximum * 2):
             if stack_ptr == 0:
                 break
 
