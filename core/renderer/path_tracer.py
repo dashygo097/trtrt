@@ -7,8 +7,14 @@ from ..objects import Ray
 from ..utils.const import EPSILON, TMIN, ObjectTag
 from .base import Renderer
 from .sampler import Sampler, UniformSampler
-from .utils import (direct_remapping, geometry_smith, ggx_distribution,
-                    reflect, refract, schlick_fresnel)
+from .utils import (
+    direct_remapping,
+    geometry_smith,
+    ggx_distribution,
+    reflect,
+    refract,
+    schlick_fresnel,
+)
 
 
 @ti.data_oriented
@@ -72,7 +78,7 @@ class PathTracer(Renderer):
         ).normalized()
 
     @ti.func
-    def ray_color(self, scene, ray: Ray):
+    def ray_color(self, scene, ray: Ray, _u: ti.f32, _v: ti.f32) -> vec3:
         color_buffer = vec3(0.0)
         luminance = vec3(1.0)
         for bounce in range(self.max_depth[None]):
@@ -96,7 +102,7 @@ class PathTracer(Renderer):
                     if self.direct_light_weight[None] > 0.0:
                         # NOTE: That the light_color is zero is equivalent to not is_visible()
                         light_ray, light_color = self.sample_direct_light(
-                            scene, hitinfo.pos, hitinfo.normal
+                            scene, hitinfo.pos, hitinfo.normal, _u, _v
                         )
                         L = light_ray.dir
                         H = (V + L).normalized()
@@ -137,14 +143,16 @@ class PathTracer(Renderer):
                         if hitinfo.roughness > 0.0:
                             alpha = hitinfo.roughness * hitinfo.roughness
                             scatter_dir = self.sampler.ggx_sample(
-                                V, hitinfo.normal, alpha
+                                V, hitinfo.normal, alpha, _u, _v
                             )
                         else:
                             scatter_dir = perfect_reflect
                     else:
                         # Diffuse reflection
                         is_specular = False
-                        scatter_dir = self.sampler.hemispherical_sample(hitinfo.normal)
+                        scatter_dir = self.sampler.hemispherical_sample(
+                            hitinfo.normal, _u, _v
+                        )
 
                     if is_specular:
                         luminance *= hitinfo.albedo
@@ -175,7 +183,7 @@ class PathTracer(Renderer):
 
                     # Directional light
                     directional_light = self.sample_directional_light(
-                        scene, ray.origin, ray.dir
+                        scene, ray.origin, ray.dir, _u, _v
                     )
                     color_buffer += directional_light * luminance
                     break

@@ -21,12 +21,12 @@ class Sampler(ABC):
 
     @abstractmethod
     @ti.func
-    def kernel(self) -> ti.f32:
+    def kernel(self, _u: ti.f32, _v: ti.f32) -> ti.f32:
         return 0.0
 
     @ti.func
-    def hemispherical_sample(self, n: vec3) -> vec3:
-        u, v = self.kernel(), self.kernel()
+    def hemispherical_sample(self, n: vec3, _u, _v) -> vec3:
+        u, v = self.kernel(_u, _v), self.kernel(_u, _v)
         theta, phi = ti.acos(ti.sqrt(u)), v * 2 * ti.math.pi
 
         x = ti.sin(theta) * ti.cos(phi)
@@ -47,7 +47,7 @@ class Sampler(ABC):
         return (result * ti.cos(theta) / ti.math.pi).normalized()
 
     @ti.func
-    def sample_cone(self, dir: vec3, angle: ti.f32) -> vec3:
+    def sample_cone(self, dir: vec3, angle: ti.f32, _u: ti.f32, _v: ti.f32) -> vec3:
         z_axis = dir
 
         temp = vec3(1.0, 0.0, 0.0)
@@ -57,8 +57,8 @@ class Sampler(ABC):
         x_axis = temp.cross(z_axis).normalized()
         y_axis = z_axis.cross(x_axis).normalized()
 
-        r = ti.sqrt(self.kernel()) * ti.tan(angle / 180 * ti.math.pi)
-        theta = 2.0 * ti.math.pi * self.kernel()
+        r = ti.sqrt(self.kernel(_u, _v)) * ti.tan(angle / 180 * ti.math.pi)
+        theta = 2.0 * ti.math.pi * self.kernel(_u, _v)
 
         x = r * ti.cos(theta)
         y = r * ti.sin(theta)
@@ -66,14 +66,16 @@ class Sampler(ABC):
         return (z_axis + x * x_axis + y * y_axis).normalized()
 
     @ti.func
-    def ggx_sample(self, v: vec3, n: vec3, alpha: ti.f32) -> vec3:
-        u, _v = self.kernel(), self.kernel()
+    def ggx_sample(
+        self, view: vec3, n: vec3, alpha: ti.f32, _u: ti.f32, _v: ti.f32
+    ) -> vec3:
+        u, v = self.kernel(_u, _v), self.kernel(_u, _v)
 
         alpha2 = alpha * alpha
 
         phi = 2.0 * ti.math.pi * u
 
-        cos_theta = ti.sqrt((1.0 - _v) / (1.0 + (alpha2 - 1.0) * _v))
+        cos_theta = ti.sqrt((1.0 - v) / (1.0 + (alpha2 - 1.0) * v))
         sin_theta = ti.sqrt(1.0 - cos_theta * cos_theta)
 
         h_tangent = vec3(sin_theta * ti.cos(phi), cos_theta, sin_theta * ti.sin(phi))
@@ -89,7 +91,7 @@ class Sampler(ABC):
         world_h = tangent * h_tangent[0] + n * h_tangent[1] + bitangent * h_tangent[2]
         world_h = world_h.normalized()
 
-        l = reflect(-v, world_h)
+        l = reflect(-view, world_h)
 
         return l.normalized()
 
@@ -100,7 +102,7 @@ class UniformSampler(Sampler):
         super().__init__()
 
     @ti.func
-    def kernel(self):
+    def kernel(self, _u: ti.f32, _v: ti.f32) -> ti.f32:
         return ti.random(ti.f32)
 
 
@@ -119,9 +121,14 @@ class BlueNoiseSampler(Sampler):
         self.blue_noise.from_numpy(bluenoise)
 
     @ti.func
-    def kernel(self):
-        # FIXIT: If use ti.random(ti.i32) here, then it is not blue noise actually
-        return self.blue_noise[
-            ti.random(ti.i32) % self.blue_noise.shape[0],
-            ti.random(ti.i32) % self.blue_noise.shape[1],
-        ]
+    def kernel(self, _u: ti.f32, _v: ti.f32) -> ti.f32:
+        texture_width, texture_height = self.blue_noise.shape
+        jitter = 0.1
+        _u = _u + ti.random(ti.f32) * jitter
+        _v = _v + ti.random(ti.f32) * jitter
+        tx = ti.i32(_u * texture_width) % texture_width
+        ty = ti.i32(_v * texture_height) % texture_height
+
+        result = self.blue_noise[tx, ty]
+
+        return result

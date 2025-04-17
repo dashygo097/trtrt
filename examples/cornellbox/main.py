@@ -6,7 +6,7 @@ import trtrt.core as g
 ti.init(arch=ti.gpu)
 res = (800, 800)
 s, c = load_cornellbox()
-r = g.PathTracer(samples_per_pixel=1)
+r = g.PathTracer(sampler=g.BlueNoiseSampler(), samples_per_pixel=1)
 
 
 def cornell_main():

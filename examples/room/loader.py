@@ -79,7 +79,7 @@ def load_room():
     sphere = g.Sphere(
         tag=0,
         center=vec3(-2.5, 2, 2.5),
-        radius=0.5,
+        radius=0.48,
         albedo=vec3(0.1, 0.4, 1.0),
         metallic=0.2,
         roughness=0.7,

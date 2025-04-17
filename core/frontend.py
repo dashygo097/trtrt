@@ -2,6 +2,7 @@ import time
 from typing import List, Tuple
 
 import taichi as ti
+from taichi.math import vec3
 from termcolor import colored
 
 from .camera import Camera
@@ -91,12 +92,12 @@ class FrontEnd:
     def render(self):
         ray = Ray()
         for i, j in self.tmp_buffers:
-            color = ti.Vector([0.0, 0.0, 0.0])
+            color = vec3(0.0)
             u = (i + ti.random()) / self.res[0]
             v = (j + ti.random()) / self.res[1]
             for _ in range(self.renderer.samples_per_pixel[None]):
                 ray = self.camera.get_ray(u, v)
-                color += self.renderer.ray_color(self.scene, ray)
+                color += self.renderer.ray_color(self.scene, ray, u, v)
             self.tmp_buffers[i, j] = color / self.renderer.samples_per_pixel[None]
             self.g_buffer[i, j] = self.renderer.fetch_gbuffer(self.scene, ray)
 

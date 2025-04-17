@@ -46,8 +46,8 @@ class Renderer(ABC):
 
     @abstractmethod
     @ti.func
-    def ray_color(self, scene, ray: Ray):
-        color_buffer = ti.Vector([1.0, 1.0, 1.0])
+    def ray_color(self, scene, ray: Ray, _u: ti.f32, _v: ti.f32) -> vec3:
+        color_buffer = vec3(1.0)
         return color_buffer
 
     @ti.func
@@ -63,7 +63,9 @@ class Renderer(ABC):
         )
 
     @ti.func
-    def sample_direct_light(self, scene, hit_point: vec3, hit_normal: vec3):
+    def sample_direct_light(
+        self, scene, hit_point: vec3, hit_normal: vec3, _u: ti.f32, _v: ti.f32
+    ):
         direct_light = vec3(0.0)
         light_pos = vec3(0.0)
         light_dir = vec3(0.0)
@@ -86,7 +88,7 @@ class Renderer(ABC):
                 light_normal = light.get_normal(light_pos)
                 light_color = light.emission
 
-            dir_noise = self.sampler.hemispherical_sample(light_normal)
+            dir_noise = self.sampler.hemispherical_sample(light_normal, _u, _v)
             light_dir = (light_pos - hit_point + dir_noise).normalized()
             distance = (light_pos - hit_point).norm()
 
@@ -108,11 +110,13 @@ class Renderer(ABC):
         return Ray(origin=hit_point, dir=light_dir), direct_light
 
     @ti.func
-    def sample_directional_light(self, scene, pos: vec3, normal: vec3):
+    def sample_directional_light(
+        self, scene, pos: vec3, normal: vec3, _u: ti.f32, _v: ti.f32
+    ) -> vec3:
         dir_light = scene.dir_light.color
         light_dir = -scene.dir_light.dir
         # Add soft shadow
-        light_dir = self.sampler.sample_cone(light_dir, 5.0)
+        light_dir = self.sampler.sample_cone(light_dir, 5.0, _u, _v)
 
         cos_theta = ti.max(0.0, normal.dot(light_dir))
 
@@ -134,9 +138,9 @@ class Renderer(ABC):
 
     @ti.func
     def sample_light_ray(self, scene):
-        light_pos = ti.Vector([0.0, 0.0, 0.0])
-        light_normal = ti.Vector([0.0, 0.0, 0.0])
-        light_dir = ti.Vector([0.0, 0.0, 0.0])
+        light_pos = vec3(0.0)
+        light_normal = vec3(0.0)
+        light_dir = vec3(0.0)
 
         ray = Ray()
 
@@ -156,7 +160,9 @@ class Renderer(ABC):
                 light_pos = light.sample_point()
                 light_normal = light.get_normal(light_pos)
 
-            light_dir = self.sampler.hemispherical_sample(light_normal)
+            light_dir = self.sampler.hemispherical_sample(
+                light_normal, ti.random(ti.f32), ti.random(ti.f32)
+            )
             ray = Ray(light_pos, light_dir)
 
         return ray
