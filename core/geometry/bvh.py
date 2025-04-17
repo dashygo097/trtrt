@@ -5,7 +5,7 @@ import taichi as ti
 from taichi.math import vec3
 
 from ..records import BVHHitInfo
-from ..utils.const import TMAX, TMIN
+from ..utils.const import TMAX, TMIN, ObjectShape
 
 
 @ti.dataclass
@@ -44,6 +44,13 @@ class AABB:
             tmin=box_tmin,
             tmax=box_tmax,
         )
+
+
+def sort_key(obj, axis: int) -> float:
+    if obj.shape == ObjectShape.TRIANGLE:
+        return obj.bbox.min[axis]
+    elif obj.shape == ObjectShape.SPHERE:
+        return obj.entity.bbox.min[axis] - 2 * TMAX
 
 
 def sort_objects(objects: List, axis: int) -> List:
