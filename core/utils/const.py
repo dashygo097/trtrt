@@ -10,7 +10,6 @@ NEAR_Z = 1e-1
 FAR_Z = 5e2
 
 
-# NOTE: A inconvenient impl for user cause user need to type ```g.ObjectTag.PRB()``` when using
 @ti.data_oriented
 class ObjectTag:
     PBR = 0

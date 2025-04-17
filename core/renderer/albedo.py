@@ -1,6 +1,7 @@
 from typing import Dict
 
 import taichi as ti
+from taichi.math import vec3
 
 from ..objects import Ray
 from .base import Renderer
@@ -26,6 +27,6 @@ class Albedo(Renderer):
         super().update()
 
     @ti.func
-    def ray_color(self, scene, ray: Ray):
+    def ray_color(self, scene, ray: Ray, _u: ti.f32, _v: ti.f32) -> vec3:
         hitinfo = scene.intersect(ray)
         return hitinfo.albedo

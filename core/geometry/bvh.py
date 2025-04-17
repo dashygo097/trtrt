@@ -1,10 +1,10 @@
-from operator import is_
 from random import randint
 from typing import List, Optional
 
 import taichi as ti
 from taichi.math import vec3
 
+from ..records import BVHHitInfo
 from ..utils.const import EPSILON, TMAX, TMIN
 
 
@@ -22,22 +22,32 @@ class AABB:
     @ti.func
     def intersect(self, ray, tmin=TMIN, tmax=TMAX):
         is_hit = True
+        box_tmin = tmin
+        box_tmax = tmax
         for i in range(3):
             inv_d = 1.0 / ray.dir[i]
             t0 = (self.min[i] - ray.origin[i]) * inv_d
             t1 = (self.max[i] - ray.origin[i]) * inv_d
-            if inv_d < 0:
-                t0, t1 = t1, t0
 
-        return is_hit
+            if t0 < t1:
+                box_tmin = ti.max(t0, box_tmin)
+                box_tmax = ti.min(t1, box_tmax)
 
+            else:
+                box_tmin = ti.max(t1, box_tmin)
+                box_tmax = ti.min(t0, box_tmax)
 
-def get_centroid(aabb: AABB) -> vec3:
-    return (aabb.min + aabb.max) * 0.5
+            is_hit = is_hit and (box_tmin <= box_tmax)
+
+        return BVHHitInfo(
+            is_hit=is_hit,
+            tmin=box_tmin,
+            tmax=box_tmax,
+        )
 
 
 def sort_objects(objects: List, axis: int) -> List:
-    return sorted(objects, key=lambda obj: get_centroid(obj.bbox)[axis])
+    return sorted(objects, key=lambda obj: obj.bbox.min[axis])
 
 
 @ti.dataclass
@@ -83,11 +93,13 @@ class Stack:
 @ti.data_oriented
 class BVH:
     def __init__(self, objects: Optional[List] = None) -> None:
-        self.objects: List = objects.copy() if objects is not None else []
+        self.objects: List = objects if objects is not None else []
+        self.labels: List = []
         self.set_objects(self.objects)
 
     def set_objects(self, objects: List) -> None:
-        self.objects = objects.copy()
+        self.objects = objects
+        self.labels = []
         max_nodes = len(self.objects) * 2 + 1
         self.nodes = BVHNode.field(shape=(max_nodes,))
         self.nodes_id = ti.field(ti.i32, shape=())
@@ -123,11 +135,11 @@ class BVH:
             obj_id=-1,
         )
 
-        for i in range(start, end):
-            self.nodes[nodes_id].aabb = self.nodes[nodes_id].aabb.union(objects[i].bbox)
-
         left_id = self._build(objects, start, mid)
         right_id = self._build(objects, mid, end)
+        self.nodes[nodes_id].aabb = self.nodes[left_id].aabb.union(
+            self.nodes[right_id].aabb
+        )
 
         self.nodes[nodes_id].left_id = left_id
         self.nodes[nodes_id].right_id = right_id

@@ -67,7 +67,7 @@ def load_room():
     )
 
     triangle = g.Triangle(
-        tag=0,
+        tag=g.ObjectTag.PBR,
         v0=vec3(0, 0, 1),
         v1=vec3(1, 0, 1),
         v2=vec3(0, 1, 1),
@@ -77,16 +77,16 @@ def load_room():
         emission=vec3(0.0),
     )
     sphere = g.Sphere(
-        tag=0,
+        tag=g.ObjectTag.PBR,
         center=vec3(-2.5, 2, 2.5),
-        radius=0.48,
+        radius=0.5,
         albedo=vec3(0.1, 0.4, 1.0),
         metallic=0.2,
         roughness=0.7,
         emission=vec3(0.0),
     )
     light1 = g.Sphere(
-        tag=0,
+        tag=g.ObjectTag.PBR,
         center=vec3(2.9, 0.9, -2.9),
         radius=0.1,
         albedo=vec3(0.0, 1.0, 0.0),
@@ -95,7 +95,7 @@ def load_room():
         emission=vec3(0.0, 5.0, 0.0),
     )
     light2 = g.Sphere(
-        tag=0,
+        tag=g.ObjectTag.PBR,
         center=vec3(-2.9, 0.9, -2.9),
         radius=0.1,
         albedo=vec3(1.0, 0.0, 0.0),

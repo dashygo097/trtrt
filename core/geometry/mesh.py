@@ -4,7 +4,7 @@ import numpy as np
 import taichi as ti
 from taichi.math import vec3
 
-from ..utils.const import PBRPreset
+from ..utils.const import ObjectTag, PBRPreset
 from ..utils.loader import load_obj
 
 
@@ -15,7 +15,7 @@ class Mesh:
 
     def load(
         self,
-        tag: int,
+        tag: ObjectTag,
         vertices: np.ndarray,
         indices: Optional[np.ndarray] = None,
         texture_coords: Optional[np.ndarray] = None,
@@ -55,7 +55,7 @@ class Mesh:
 
     def load_file(
         self,
-        tag: int,
+        tag: ObjectTag,
         obj_file: str,
         **kwargs,
     ) -> None:

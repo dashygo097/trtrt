@@ -12,7 +12,6 @@ class HitInfo:
     normal: vec3
     front: ti.u1
     tag: ti.u32
-    id: ti.u32
     u: ti.f32
     v: ti.f32
 
@@ -27,7 +26,6 @@ class BVHHitInfo:
     is_hit: ti.u1
     tmin: ti.f32
     tmax: ti.f32
-    obj_id: ti.i32
 
 
 @ti.dataclass

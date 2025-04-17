@@ -33,7 +33,7 @@ class ZBuffer(Renderer):
         self.params["alpha"] = self.alpha[None]
 
     @ti.func
-    def ray_color(self, scene, ray: Ray):
+    def ray_color(self, scene, ray: Ray, _u: ti.f32, _v: ti.f32) -> vec3:
         color_buffer = vec3(0.0)
         hitinfo = scene.intersect(ray)
         color_buffer = vec3(ti.tanh(hitinfo.time / self.alpha[None]) * 2 / ti.math.pi)

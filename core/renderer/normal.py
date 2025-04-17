@@ -27,7 +27,7 @@ class Normal(Renderer):
         super().update()
 
     @ti.func
-    def ray_color(self, scene, ray: Ray):  # pyright: ignore
+    def ray_color(self, scene, ray: Ray, _u: ti.f32, _v: ti.f32) -> vec3:
         color_buffer = vec3(0.0)
         hitinfo = scene.intersect(ray)
         color_buffer = ti.abs(hitinfo.normal + 1) * 0.5
