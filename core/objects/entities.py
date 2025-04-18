@@ -1,19 +1,11 @@
 import taichi as ti
 from taichi.math import vec3
 
-from .geometry.bvh import AABB
-from .records import HitInfo
-from .utils.const import EPSILON, TMAX, TMIN
-
-
-@ti.dataclass
-class Ray:
-    origin: vec3
-    dir: vec3
-
-    @ti.func
-    def at(self, t):
-        return self.origin + t * self.dir
+from ..geometry.bvh import AABB
+from ..records import HitInfo
+from ..utils.const import EPSILON, TMAX, TMIN
+from .lights import Ray
+from .pbr import PBRMaterial
 
 
 @ti.dataclass
@@ -24,10 +16,7 @@ class Triangle:
     v2: vec3
     bbox: AABB
 
-    albedo: vec3
-    metallic: ti.f32
-    roughness: ti.f32
-    emission: vec3
+    pbr: PBRMaterial
 
     @ti.func
     def intersect(self, ray: Ray, tmin=TMIN, tmax=TMAX):
@@ -71,10 +60,10 @@ class Triangle:
             tag=self.tag,
             u=u,
             v=v,
-            albedo=self.albedo,
-            metallic=self.metallic,
-            roughness=self.roughness,
-            emission=self.emission,
+            albedo=self.pbr.albedo,
+            metallic=self.pbr.metallic,
+            roughness=self.pbr.roughness,
+            emission=self.pbr.emission,
         )
 
     @ti.func
@@ -97,13 +86,10 @@ class Triangle:
 class Sphere:
     tag: ti.i32
     center: vec3
-    radius: float
+    radius: ti.f32
     bbox: AABB
 
-    albedo: vec3
-    metallic: ti.f32
-    roughness: ti.f32
-    emission: vec3
+    pbr: PBRMaterial
 
     @ti.func
     def intersect(self, ray: Ray, tmin=TMIN, tmax=TMAX):
@@ -146,10 +132,10 @@ class Sphere:
             tag=self.tag,
             u=u,
             v=v,
-            albedo=self.albedo,
-            metallic=self.metallic,
-            roughness=self.roughness,
-            emission=self.emission,
+            albedo=self.pbr.albedo,
+            metallic=self.pbr.metallic,
+            roughness=self.pbr.roughness,
+            emission=self.pbr.emission,
         )
 
     @ti.func
@@ -164,38 +150,3 @@ class Sphere:
     @ti.func
     def get_normal(self, pos):
         return (pos - self.center).normalized()
-
-
-@ti.dataclass
-class DirecLight:
-    dir: vec3
-    color: vec3
-
-
-def init4bbox(obj):
-    if isinstance(obj, Triangle):
-        init_triangle(obj)
-    elif isinstance(obj, Sphere):
-        init_sphere(obj)
-    else:
-        raise ValueError("Unknown object type")
-
-
-# NOTE: I HAVE NO IDEA WHY MY ORIGINAL CODE DOESN'T WORK
-# LEAVE THIS FOR TEMPORARY USE
-def init_triangle(triangle):
-    triangle.bbox.min.x = ti.min(triangle.v0.x, triangle.v1.x, triangle.v2.x)
-    triangle.bbox.max.x = ti.max(triangle.v0.x, triangle.v1.x, triangle.v2.x)
-    triangle.bbox.min.y = ti.min(triangle.v0.y, triangle.v1.y, triangle.v2.y)
-    triangle.bbox.max.y = ti.max(triangle.v0.y, triangle.v1.y, triangle.v2.y)
-    triangle.bbox.min.z = ti.min(triangle.v0.z, triangle.v1.z, triangle.v2.z)
-    triangle.bbox.max.z = ti.max(triangle.v0.z, triangle.v1.z, triangle.v2.z)
-
-
-def init_sphere(sphere):
-    sphere.bbox.min.x = sphere.center.x - sphere.radius
-    sphere.bbox.max.x = sphere.center.x + sphere.radius
-    sphere.bbox.min.y = sphere.center.y - sphere.radius
-    sphere.bbox.max.y = sphere.center.y + sphere.radius
-    sphere.bbox.min.z = sphere.center.z - sphere.radius
-    sphere.bbox.max.z = sphere.center.z + sphere.radius

@@ -4,8 +4,7 @@ import numpy as np
 import taichi as ti
 from taichi.math import vec3
 
-from ..utils.const import ObjectTag, PBRPreset
-from ..utils.loader import load_obj
+from ..utils import ObjectTag, PBRPreset, load_obj
 
 
 @ti.data_oriented
@@ -22,6 +21,8 @@ class Mesh:
         coords_mapping: Optional[Dict] = None,
         **kwargs,
     ) -> None:
+        from ..objects import PBRMaterial
+
         self.tag = tag
         self.vertices = ti.Vector.field(
             vertices.shape[1], dtype=ti.f32, shape=vertices.shape[0]
@@ -48,10 +49,8 @@ class Mesh:
             self.coords_mapping = None
 
         self.kwargs = kwargs
-        self.albedo = kwargs.get("albedo", vec3(0.0))
-        self.metallic = kwargs.get("metallic", 0.0)
-        self.roughness = kwargs.get("roughness", 0.0)
-        self.emission = kwargs.get("emission", vec3(0.0))
+        if self.tag == ObjectTag.PBR:
+            self.kwargs = {"pbr": PBRMaterial(**kwargs)}
 
     def load_file(
         self,

@@ -20,18 +20,14 @@ class Scene:
 
         self.objects: List[Abstraction] = []
 
-        self.light_ptr = ti.field(dtype=ti.i32, shape=())
         self.light_map = ti.field(dtype=ti.i32, shape=maximum)
+        self.light_ptr = 0
 
         self.mesh = Triangle.field(shape=maximum)
-        self.tri_ptr = ti.field(dtype=ti.i32, shape=())
+        self.tri_ptr = 0
 
         self.spheres = Sphere.field(shape=maximum)
-        self.sphere_ptr = ti.field(dtype=ti.i32, shape=())
-
-        self.light_ptr[None] = 0
-        self.tri_ptr[None] = 0
-        self.sphere_ptr[None] = 0
+        self.sphere_ptr = 0
 
         self.bg_top = vec3(0.0)
         self.bg_bottom = vec3(0.0)
@@ -41,10 +37,10 @@ class Scene:
         self.bvh = BVH()
 
     def __getitem__(self, index: int):
-        if 0 <= index < self.tri_ptr[None]:
+        if 0 <= index < self.tri_ptr:
             obj = self.mesh[index]
-        elif self.tri_ptr[None] <= index < self.tri_ptr[None] + self.sphere_ptr[None]:
-            obj = self.spheres[index - self.tri_ptr[None]]
+        elif self.tri_ptr <= index < self.tri_ptr + self.sphere_ptr:
+            obj = self.spheres[index - self.tri_ptr]
         else:
             raise IndexError("Index out of range")
 
@@ -104,11 +100,11 @@ class Scene:
         hitinfo = HitInfo(time=tmax)
         obj_hit = HitInfo(is_hit=False, time=tmax)
 
-        stack = ti.Vector([-1] * self.maximum * 2, dt=ti.i32)
+        stack = ti.Vector([-1] * (self.tri_ptr * 2 + self.sphere_ptr * 2), dt=ti.i32)
         stack[0] = self.bvh.root_id
         stack_ptr = 1
 
-        for _ in range(self.maximum * 2):
+        for _ in range(self.tri_ptr * 2 + self.sphere_ptr * 2):
             if stack_ptr == 0:
                 break
 
@@ -131,12 +127,12 @@ class Scene:
                     bvh_hitinfo = bvh_hitinfo_tmp
 
                 if node.obj_id != -1:
-                    if node.obj_id < self.tri_ptr[None]:
+                    if node.obj_id < self.tri_ptr:
                         obj = self.mesh[node.obj_id]
                         obj_hit = obj.intersect(ray, tmin, hitinfo.time)
 
-                    elif node.obj_id < self.tri_ptr[None] + self.sphere_ptr[None]:
-                        obj = self.spheres[node.obj_id - self.tri_ptr[None]]
+                    elif node.obj_id < self.tri_ptr + self.sphere_ptr:
+                        obj = self.spheres[node.obj_id - self.tri_ptr]
                         obj_hit = obj.intersect(ray, tmin, hitinfo.time)
 
                     if obj_hit.is_hit and obj_hit.time < hitinfo.time:
@@ -157,13 +153,13 @@ class Scene:
         hitinfo = HitInfo(time=tmax)
         hitinfo_tmp = HitInfo(time=tmax)
 
-        for index in range(self.tri_ptr[None]):
+        for index in range(self.tri_ptr):
             hitinfo_tmp = self.mesh[index].intersect(ray, tmin, hitinfo.time)
 
             if hitinfo_tmp.is_hit and hitinfo_tmp.time < hitinfo.time:
                 hitinfo = hitinfo_tmp
 
-        for index in range(self.sphere_ptr[None]):
+        for index in range(self.sphere_ptr):
             hitinfo_tmp = self.spheres[index].intersect(ray, tmin, hitinfo.time)
 
             if hitinfo_tmp.is_hit and hitinfo_tmp.time < hitinfo.time:
@@ -187,16 +183,16 @@ class Scene:
         self.bvh.info()
 
         for index, obj in enumerate(self.objects):
-            if obj.tag == ObjectTag.PBR and obj.entity.emission.norm() > 0.0:
-                self.light_map[self.light_ptr[None]] = index
-                self.light_ptr[None] += 1
+            if obj.tag == ObjectTag.PBR and obj.entity.pbr.emission.norm() > 0.0:
+                self.light_map[self.light_ptr] = index
+                self.light_ptr += 1
 
             if obj.shape == ObjectShape.TRIANGLE:
-                self.mesh[self.tri_ptr[None]] = obj.entity
-                self.tri_ptr[None] += 1
+                self.mesh[self.tri_ptr] = obj.entity
+                self.tri_ptr += 1
             elif obj.shape == ObjectShape.SPHERE:
-                self.spheres[self.sphere_ptr[None]] = obj.entity
-                self.sphere_ptr[None] += 1
+                self.spheres[self.sphere_ptr] = obj.entity
+                self.sphere_ptr += 1
 
         self.info()
 
@@ -207,20 +203,20 @@ class Scene:
             "[INFO] "
             + colored("Number of ", attrs=["bold"])
             + colored("Triangles", "green", attrs=["bold"])
-            + colored(f": {self.tri_ptr[None]}", attrs=["bold"])
+            + colored(f": {self.tri_ptr}", attrs=["bold"])
         )
         print(
             "[INFO] "
             + colored("Number of ", attrs=["bold"])
             + colored("Spheres", "red", attrs=["bold"])
-            + colored(f": {self.sphere_ptr[None]}", attrs=["bold"])
+            + colored(f": {self.sphere_ptr}", attrs=["bold"])
         )
         print(
             "[INFO] "
             + colored("Number of ", attrs=["bold"])
             + colored("Light Emitters", "yellow", attrs=["bold"])
             + colored(
-                f": {self.light_ptr[None]}",
+                f": {self.light_ptr}",
                 attrs=["bold"],
             )
         )

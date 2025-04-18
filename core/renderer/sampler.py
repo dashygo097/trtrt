@@ -7,7 +7,7 @@ from PIL import Image
 from taichi.math import vec3
 
 from .. import assets
-from ..utils.const import EPSILON
+from ..utils import EPSILON
 from .utils import reflect
 
 

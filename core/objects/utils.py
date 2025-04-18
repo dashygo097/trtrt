@@ -1,0 +1,32 @@
+import taichi as ti
+
+from .entities import Sphere, Triangle
+
+
+def init4bbox(obj):
+    if isinstance(obj, Triangle):
+        init_triangle(obj)
+    elif isinstance(obj, Sphere):
+        init_sphere(obj)
+    else:
+        raise ValueError("Unknown object type")
+
+
+# NOTE: I HAVE NO IDEA WHY MY ORIGINAL CODE DOESN'T WORK
+# LEAVE THIS FOR TEMPORARY USE
+def init_triangle(triangle):
+    triangle.bbox.min.x = ti.min(triangle.v0.x, triangle.v1.x, triangle.v2.x)
+    triangle.bbox.max.x = ti.max(triangle.v0.x, triangle.v1.x, triangle.v2.x)
+    triangle.bbox.min.y = ti.min(triangle.v0.y, triangle.v1.y, triangle.v2.y)
+    triangle.bbox.max.y = ti.max(triangle.v0.y, triangle.v1.y, triangle.v2.y)
+    triangle.bbox.min.z = ti.min(triangle.v0.z, triangle.v1.z, triangle.v2.z)
+    triangle.bbox.max.z = ti.max(triangle.v0.z, triangle.v1.z, triangle.v2.z)
+
+
+def init_sphere(sphere):
+    sphere.bbox.min.x = sphere.center.x - sphere.radius
+    sphere.bbox.max.x = sphere.center.x + sphere.radius
+    sphere.bbox.min.y = sphere.center.y - sphere.radius
+    sphere.bbox.max.y = sphere.center.y + sphere.radius
+    sphere.bbox.min.z = sphere.center.z - sphere.radius
+    sphere.bbox.max.z = sphere.center.z + sphere.radius

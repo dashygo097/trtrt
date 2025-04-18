@@ -6,7 +6,7 @@ from taichi.math import vec3
 
 from ..objects import Ray
 from ..records import GBuffer
-from ..utils.const import FAR_Z, NEAR_Z, TMIN
+from ..utils import FAR_Z, NEAR_Z, TMIN
 from .sampler import Sampler, UniformSampler
 
 
@@ -70,23 +70,23 @@ class Renderer(ABC):
         light_pos = vec3(0.0)
         light_dir = vec3(0.0)
 
-        if scene.light_ptr[None] > 0:
-            index = ti.random(ti.i32) % scene.light_ptr[None]
+        if scene.light_ptr > 0:
+            index = ti.random(ti.i32) % scene.light_ptr
             index = scene.light_map[index]
 
             light_normal = vec3(0.0)
             light_color = vec3(0.0)
 
-            if index < scene.tri_ptr[None]:
+            if index < scene.tri_ptr:
                 light = scene.mesh[index]
                 light_pos = light.sample_point()
                 light_normal = light.get_normal(light_pos)
-                light_color = light.emission
+                light_color = light.pbr.emission
             else:
-                light = scene.spheres[index - scene.tri_ptr[None]]
+                light = scene.spheres[index - scene.tri_ptr]
                 light_pos = light.sample_point()
                 light_normal = light.get_normal(light_pos)
-                light_color = light.emission
+                light_color = light.pbr.emission
 
             dir_noise = self.sampler.hemispherical_sample(light_normal, _u, _v)
             light_dir = (light_pos - hit_point + dir_noise).normalized()
@@ -103,9 +103,7 @@ class Renderer(ABC):
                     cos_theta_surf * cos_theta_light / max(TMIN, distance * distance)
                 )
 
-                light_pdf = 1.0 / scene.light_ptr[None]
-
-                direct_light = light_color * geometry_term / light_pdf
+                direct_light = light_color * geometry_term * scene.light_ptr
 
         return Ray(origin=hit_point, dir=light_dir), direct_light
 
@@ -149,14 +147,14 @@ class Renderer(ABC):
 
         else:
             # NOTE: SEEMING BAD CODE BUT IT WORKS (OTHERWISE IT RAISES ERROR)
-            index = ti.random(ti.i32) % scene.light_ptr[None]
+            index = ti.random(ti.i32) % scene.light_ptr
             index = scene.light_map[index]
-            if index < scene.tri_ptr[None]:
+            if index < scene.tri_ptr:
                 light = scene.mesh[index]
                 light_pos = light.sample_point()
                 light_normal = light.get_normal(light_pos)
             else:
-                light = scene.spheres[index - scene.tri_ptr[None]]
+                light = scene.spheres[index - scene.tri_ptr]
                 light_pos = light.sample_point()
                 light_normal = light.get_normal(light_pos)
 

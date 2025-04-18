@@ -5,7 +5,7 @@ from taichi.math import vec3
 
 from ..objects import Ray
 from ..scene import Scene
-from ..utils.const import EPSILON, TMIN, ObjectTag
+from ..utils import EPSILON, TMIN, ObjectTag
 from .base import Renderer
 from .sampler import Sampler, UniformSampler
 from .utils import (direct_remapping, geometry_smith, ggx_distribution,
