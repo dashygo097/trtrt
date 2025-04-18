@@ -4,38 +4,6 @@ import taichi as ti
 from taichi.math import vec2, vec3, vec4
 
 
-@ti.dataclass
-class HitInfo:
-    is_hit: ti.u1
-    time: ti.f32
-    pos: vec3
-    normal: vec3
-    front: ti.u1
-    tag: ti.u32
-    u: ti.f32
-    v: ti.f32
-
-    albedo: vec3
-    metallic: ti.f32
-    roughness: ti.f32
-    emission: vec3
-
-
-@ti.dataclass
-class BVHHitInfo:
-    is_hit: ti.u1
-    tmin: ti.f32
-    tmax: ti.f32
-
-
-@ti.dataclass
-class GBuffer:
-    depth: ti.f32
-    pos: vec3
-    normal: vec3
-    albedo: vec3
-
-
 @ti.data_oriented
 class VelocityBuffer:
     def __init__(self, res: Tuple[int, int], camera):
