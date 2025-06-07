@@ -3,7 +3,7 @@ from loader import load_cornellbox
 
 import trtrt.core as g
 
-ti.init(arch=ti.gpu)
+ti.init(arch=ti.gpu, debug=True)
 res = (800, 800)
 s, c = load_cornellbox()
 r = g.PathTracer(sampler=g.UniformSampler(), samples_per_pixel=1)

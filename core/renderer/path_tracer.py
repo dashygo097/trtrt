@@ -4,7 +4,6 @@ import taichi as ti
 from taichi.math import vec3
 
 from ..objects import Ray
-from ..scene import Scene
 from ..utils import EPSILON, TMIN, ObjectTag
 from .base import Renderer
 from .sampler import Sampler, UniformSampler
