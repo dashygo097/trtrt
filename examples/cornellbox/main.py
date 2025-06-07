@@ -15,7 +15,7 @@ def cornell_main():
     f.set_scene(s)
     f.set_camera(c)
     f.set_renderer(r)
-    f.add_post_processor(g.GaussianBlur(enabled=False))
+    f.add_post_processor(g.GaussianBlur(enabled=True))
     f.add_post_processor(g.BilateralFilter(enabled=False))
     f.add_post_processor(g.JointBilateralFilter(enabled=False))
 
