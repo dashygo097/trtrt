@@ -99,7 +99,7 @@ class FrontEnd:
                 ray = self.camera.get_ray(u, v)
                 color += self.renderer.ray_color(self.scene, ray, u, v)
             self.tmp_buffers[i, j] = color / self.renderer.samples_per_pixel[None]
-            # self.g_buffer[i, j] = self.renderer.fetch_gbuffer(self.scene, ray)
+            self.g_buffer[i, j] = self.renderer.fetch_gbuffer(self.scene, ray)
 
     @ti.kernel
     def accumulate(self):
