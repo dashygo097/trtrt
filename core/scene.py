@@ -169,7 +169,7 @@ class Scene:
 
     @ti.func
     def intersect(self, ray: Ray, tmin=TMIN, tmax=TMAX) -> HitInfo:
-        hitinfo = self.bvh_intersect(ray, tmin, tmax)
+        hitinfo = self.bruteforce_intersect(ray, tmin, tmax)
         return hitinfo
 
     def make(self) -> None:
