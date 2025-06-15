@@ -71,6 +71,8 @@ class BVH:
         self.root_id = -1
 
     def build(self) -> None:
+        if not self.objects:
+            return
         self.root_id = self._build(self.objects, 0, len(self.objects))
 
     def _build(self, objects: List, start: int, end: int) -> int:
