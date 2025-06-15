@@ -36,6 +36,9 @@ class Scene:
 
         self.bvh = BVH()
 
+        # self.hit_count = ti.field(dtype=ti.i32, shape=())
+        # self.hit_count[None] = 0
+
     def __getitem__(self, index: int):
         if 0 <= index < self.tri_ptr:
             obj = self.mesh[index]
@@ -95,15 +98,19 @@ class Scene:
 
     @ti.func
     def bvh_intersect(self, ray, tmin=TMIN, tmax=TMAX) -> HitInfo:
-        hitinfo = HitInfo(time=tmax, is_hit=False)
+        hitinfo = HitInfo(time=tmax)
+        hitinfo_tmp = HitInfo(time=tmax)
 
         stack = ti.Vector([-1] * 64, dt=ti.i32)
         stack[0] = self.bvh.root_id
         stack_ptr = 1
 
+        # self.hit_count[None] = 0
+
         while stack_ptr > 0:
             stack_ptr -= 1
             node_id = stack[stack_ptr]
+            stack[stack_ptr] = -1
 
             if node_id == -1:
                 continue
@@ -111,22 +118,24 @@ class Scene:
             node = self.bvh.nodes[node_id]
 
             aabb_hit = node.aabb.intersect(ray, tmin, hitinfo.time)
-            if not aabb_hit.is_hit:
+            # self.hit_count[None] += 1
+            if not aabb_hit.is_hit or aabb_hit.tmin >= hitinfo.time:
                 continue
 
             if node.obj_id != -1:
-                obj_hit = HitInfo(is_hit=False, time=hitinfo.time)
-
                 if node.obj_id < self.tri_ptr:
-                    obj_hit = self.mesh[node.obj_id].intersect(ray, tmin, hitinfo.time)
-                elif node.obj_id < self.tri_ptr + self.sphere_ptr:
-                    sphere_idx = node.obj_id - self.tri_ptr
-                    obj_hit = self.spheres[sphere_idx].intersect(
+                    hitinfo_tmp = self.mesh[node.obj_id].intersect(
                         ray, tmin, hitinfo.time
                     )
+                    # self.hit_count[None] += 1
+                elif node.obj_id < self.tri_ptr + self.sphere_ptr:
+                    hitinfo_tmp = self.spheres[node.obj_id - self.tri_ptr].intersect(
+                        ray, tmin, hitinfo.time
+                    )
+                    # self.hit_count[None] += 1
 
-                if obj_hit.is_hit and obj_hit.time < hitinfo.time:
-                    hitinfo = obj_hit
+                if hitinfo_tmp.is_hit and (hitinfo_tmp.time < hitinfo.time):
+                    hitinfo = hitinfo_tmp
             else:
                 if node.right_id != -1:
                     stack[stack_ptr] = node.right_id
@@ -142,24 +151,27 @@ class Scene:
         hitinfo = HitInfo(time=tmax)
         hitinfo_tmp = HitInfo(time=tmax)
 
+        # self.hit_count[None] = 0
+
         for index in range(self.tri_ptr):
             hitinfo_tmp = self.mesh[index].intersect(ray, tmin, hitinfo.time)
+            # self.hit_count[None] += 1
 
-            if hitinfo_tmp.is_hit and hitinfo_tmp.time < hitinfo.time:
+            if hitinfo_tmp.is_hit and (hitinfo_tmp.time < hitinfo.time):
                 hitinfo = hitinfo_tmp
 
         for index in range(self.sphere_ptr):
             hitinfo_tmp = self.spheres[index].intersect(ray, tmin, hitinfo.time)
+            # self.hit_count[None] += 1
 
-            if hitinfo_tmp.is_hit and hitinfo_tmp.time < hitinfo.time:
+            if hitinfo_tmp.is_hit and (hitinfo_tmp.time < hitinfo.time):
                 hitinfo = hitinfo_tmp
 
         return hitinfo
 
     @ti.func
     def intersect(self, ray: Ray, tmin=TMIN, tmax=TMAX) -> HitInfo:
-        hitinfo = self.bvh_intersect(ray, tmin, tmax)
-        return hitinfo
+        return self.bruteforce_intersect(ray, tmin, tmax)
 
     def make(self) -> None:
         for i in range(len(self.objects)):

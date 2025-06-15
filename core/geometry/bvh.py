@@ -5,7 +5,7 @@ import taichi as ti
 from taichi.math import vec3
 
 from ..records import BVHHitInfo
-from ..utils.const import TMAX, TMIN, ObjectShape
+from ..utils.const import EPSILON, TMAX, TMIN, ObjectShape
 
 
 @ti.dataclass
@@ -21,23 +21,19 @@ class AABB:
 
     @ti.func
     def intersect(self, ray, tmin=TMIN, tmax=TMAX):
-        is_hit = True
-        box_tmin = tmin
-        box_tmax = tmax
-        for i in range(3):
-            inv_d = 1.0 / ray.dir[i]
-            t0 = (self.min[i] - ray.origin[i]) * inv_d
-            t1 = (self.max[i] - ray.origin[i]) * inv_d
+        t1 = (self.min - ray.origin) / (ray.dir + EPSILON)
+        t2 = (self.max - ray.origin) / (ray.dir + EPSILON)
 
-            if t0 < t1:
-                box_tmin = ti.max(t0, box_tmin)
-                box_tmax = ti.min(t1, box_tmax)
+        tmin_vec = ti.min(t1, t2)
+        tmax_vec = ti.max(t1, t2)
 
-            else:
-                box_tmin = ti.max(t1, box_tmin)
-                box_tmax = ti.min(t0, box_tmax)
+        box_tmin = ti.max(ti.max(tmin_vec.x, tmin_vec.y), tmin_vec.z)
+        box_tmax = ti.min(ti.min(tmax_vec.x, tmax_vec.y), tmax_vec.z)
 
-            is_hit = is_hit and (box_tmin <= box_tmax)
+        box_tmin = ti.max(box_tmin, tmin)
+        box_tmax = ti.min(box_tmax, tmax)
+
+        is_hit = box_tmin <= box_tmax
 
         return BVHHitInfo(
             is_hit=is_hit,
@@ -80,7 +76,7 @@ class BVH:
         self.used_nodes += 1
 
         if end - start == 1:
-            obj = objects[start].entity  # Use start index, not used_nodes
+            obj = objects[start].entity
             self.nodes[used_nodes] = BVHNode(
                 aabb=obj.bbox,
                 left_id=-1,
