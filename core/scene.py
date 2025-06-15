@@ -104,7 +104,7 @@ class Scene:
         stack[0] = self.bvh.root_id
         stack_ptr = 1
 
-        for _ in range(self.tri_ptr * 2 + self.sphere_ptr * 2):
+        while stack_ptr > 0:
             if stack_ptr == 0:
                 break
 
@@ -120,11 +120,10 @@ class Scene:
             )
 
             if bvh_hitinfo_tmp.is_hit:
-                if (
-                    bvh_hitinfo_tmp.tmin < bvh_hitinfo.tmin
-                    and bvh_hitinfo_tmp.tmax > bvh_hitinfo.tmax
-                ):
-                    bvh_hitinfo = bvh_hitinfo_tmp
+                if bvh_hitinfo_tmp.tmin < bvh_hitinfo.tmin:
+                    bvh_hitinfo.tmin = bvh_hitinfo_tmp.tmin
+                if bvh_hitinfo_tmp.tmax > bvh_hitinfo.tmax:
+                    bvh_hitinfo.tmax = bvh_hitinfo_tmp.tmax
 
                 if node.obj_id != -1:
                     if node.obj_id < self.tri_ptr:
@@ -169,7 +168,7 @@ class Scene:
 
     @ti.func
     def intersect(self, ray: Ray, tmin=TMIN, tmax=TMAX) -> HitInfo:
-        hitinfo = self.bruteforce_intersect(ray, tmin, tmax)
+        hitinfo = self.bvh_intersect(ray, tmin, tmax)
         return hitinfo
 
     def make(self) -> None:

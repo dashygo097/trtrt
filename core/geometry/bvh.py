@@ -178,7 +178,6 @@ def sort_key(obj, axis: int):
         return obj.entity.bbox.min[axis]
     elif obj.shape == ObjectShape.SPHERE:
         return obj.entity.bbox.min[axis] + 2 * TMAX
-
     else:
         raise ValueError(f"Unsupported object shape: {obj.shape}")
 
