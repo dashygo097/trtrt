@@ -3,7 +3,7 @@ from loader import load_room
 
 import trtrt.core as g
 
-ti.init(arch=ti.gpu)
+ti.init(arch=ti.vulkan)
 res = (800, 800)
 
 s, c = load_room()
