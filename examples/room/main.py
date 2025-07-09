@@ -1,7 +1,7 @@
 import taichi as ti
 from loader import load_room
 
-import trtrt.core as g
+import trtrt as g
 
 ti.init(arch=ti.vulkan)
 res = (800, 800)
