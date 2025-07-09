@@ -3,7 +3,6 @@ from typing import Dict
 import taichi as ti
 from taichi.math import vec3
 
-from ..records import GBuffer
 from .post_processor import ProcessorCore
 
 
@@ -136,7 +135,6 @@ class JointBilateralFilter(BilateralFilter):
 
     def set_buffers(self, buffers) -> None:
         self.buffers = buffers
-        self.g_buffers = GBuffer.field(shape=self.buffers.shape)
 
         self.res = self.buffers.shape
         self.dst = ti.Vector.field(3, dtype=ti.f32, shape=self.res)

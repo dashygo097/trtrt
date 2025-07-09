@@ -101,7 +101,7 @@ class Scene:
         hitinfo = HitInfo(time=tmax)
         hitinfo_tmp = HitInfo(time=tmax)
 
-        stack = ti.Vector([-1] * 64, dt=ti.i32)
+        stack = ti.Vector([-1] * 2 * (self.tri_ptr + self.sphere_ptr), dt=ti.i32)
         stack[0] = self.bvh.root_id
         stack_ptr = 1
 

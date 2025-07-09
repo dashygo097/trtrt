@@ -109,7 +109,7 @@ class BVH:
         return used_nodes
 
     def info(self) -> None:
-        print(f"BVH Info:")
+        print("BVH Info:")
         print(f"  Number of objects: {len(self.objects)}")
         print(f"  Number of nodes: {self.used_nodes}")
         print(f"  Root node ID: {self.root_id}")
@@ -158,7 +158,7 @@ class BVH:
             if node.obj_id != -1:
                 print(f" (Leaf, Object: {node.obj_id})")
             else:
-                print(f" (Internal)")
+                print(" (Internal)")
 
             new_indent = indent + ("    " if is_last else "│   ")
 

@@ -1,7 +1,7 @@
 import numpy as np
 from taichi.math import vec3
 
-import trtrt.core as g
+import trtrt as g
 
 
 def load_room():

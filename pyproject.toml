@@ -1,0 +1,21 @@
+[project]
+name = "trtrt"
+version = "0.1.0"
+description = "A tiny real-time(not yet) ray tracer written in taichi-lang from scratch."
+readme = "README.md"
+authors = [
+    { name = "dashygo097", email = "dashygo097@github.com" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=2.3.1",
+    "taichi>=1.7.3",
+    "termcolor>=3.1.0",
+]
+
+[project.scripts]
+trtrt = "trtrt:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

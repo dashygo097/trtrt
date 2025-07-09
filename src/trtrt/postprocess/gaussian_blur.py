@@ -98,7 +98,7 @@ class GaussianBlur(ProcessorCore):
                 blur_sum += weight * self.dst[i, y]
                 weight_sum += weight
 
-            if weight_sum > 0:
+            if weight_sum > 0.0:
                 self.dst[i, j] = blur_sum / weight_sum
 
             else:
@@ -110,3 +110,20 @@ class GaussianBlur(ProcessorCore):
             self.buffers[i, j] = self.dst[i, j] * self.weight[None] + self.buffers[
                 i, j
             ] * (1 - self.weight[None])
+
+
+class Bloom(GaussianBlur):
+    def __init__(
+        self,
+        enabled: bool = True,
+        radius: int = 2,
+        weight: float = 0.1,
+        sigma: float = 1.0,
+    ) -> None:
+        super().__init__(enabled, radius, weight, sigma)
+
+    def _name(self) -> str:
+        return "Bloom"
+
+    @ti.kernel
+    def process(self): ...

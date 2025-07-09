@@ -1,5 +1,6 @@
 import taichi as ti
 
+from ..utils.const import TMIN
 from .entities import Sphere, Triangle
 
 
@@ -15,12 +16,12 @@ def init4bbox(obj):
 # NOTE: I HAVE NO IDEA WHY MY ORIGINAL CODE DOESN'T WORK
 # LEAVE THIS FOR TEMPORARY USE
 def init_triangle(triangle):
-    triangle.bbox.min.x = ti.min(triangle.v0.x, triangle.v1.x, triangle.v2.x)
-    triangle.bbox.max.x = ti.max(triangle.v0.x, triangle.v1.x, triangle.v2.x)
-    triangle.bbox.min.y = ti.min(triangle.v0.y, triangle.v1.y, triangle.v2.y)
-    triangle.bbox.max.y = ti.max(triangle.v0.y, triangle.v1.y, triangle.v2.y)
-    triangle.bbox.min.z = ti.min(triangle.v0.z, triangle.v1.z, triangle.v2.z)
-    triangle.bbox.max.z = ti.max(triangle.v0.z, triangle.v1.z, triangle.v2.z)
+    triangle.bbox.min.x = ti.min(triangle.v0.x, triangle.v1.x, triangle.v2.x) - TMIN
+    triangle.bbox.max.x = ti.max(triangle.v0.x, triangle.v1.x, triangle.v2.x) + TMIN
+    triangle.bbox.min.y = ti.min(triangle.v0.y, triangle.v1.y, triangle.v2.y) - TMIN
+    triangle.bbox.max.y = ti.max(triangle.v0.y, triangle.v1.y, triangle.v2.y) + TMIN
+    triangle.bbox.min.z = ti.min(triangle.v0.z, triangle.v1.z, triangle.v2.z) - TMIN
+    triangle.bbox.max.z = ti.max(triangle.v0.z, triangle.v1.z, triangle.v2.z) + TMIN
 
 
 def init_sphere(sphere):
