@@ -14,7 +14,7 @@ class Mesh:
 
     def load(
         self,
-        tag: ObjectTag,
+        tag: int,
         vertices: np.ndarray,
         indices: Optional[np.ndarray] = None,
         texture_coords: Optional[np.ndarray] = None,
@@ -54,7 +54,7 @@ class Mesh:
 
     def load_file(
         self,
-        tag: ObjectTag,
+        tag: int,
         obj_file: str,
         **kwargs,
     ) -> None:

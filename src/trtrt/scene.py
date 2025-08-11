@@ -173,15 +173,16 @@ class Scene:
     def intersect(self, ray: Ray, tmin=TMIN, tmax=TMAX) -> HitInfo:
         return self.bruteforce_intersect(ray, tmin, tmax)
 
-    def make(self) -> None:
+    def make(self, bvh_info: bool = False) -> None:
         for i in range(len(self.objects)):
             init4bbox(self.objects[i].entity)
 
         self.bvh.set_objects(self.objects)
         self.bvh.build()
 
-        self.bvh.pretty_print()
-        self.bvh.info()
+        if bvh_info:
+            self.bvh.pretty_print()
+            self.bvh.info()
 
         for index, obj in enumerate(self.objects):
             if obj.tag == ObjectTag.PBR and obj.entity.pbr.emission.norm() > 0.0:

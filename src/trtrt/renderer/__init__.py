@@ -1,5 +1,6 @@
 from .albedo import *
 from .base import *
+from .blinn_phong import *
 from .normal import *
 from .path_tracer import *
 from .sampler import *

@@ -71,8 +71,7 @@ class Renderer(ABC):
         light_dir = vec3(0.0)
 
         if scene.light_ptr > 0:
-            index = ti.random(ti.i32) % scene.light_ptr
-            index = scene.light_map[index]
+            index = scene.light_map[ti.random(ti.i32) % scene.light_ptr]
 
             light_normal = vec3(0.0)
             light_color = vec3(0.0)
@@ -80,12 +79,12 @@ class Renderer(ABC):
             if index < scene.tri_ptr:
                 light = scene.mesh[index]
                 light_pos = light.sample_point()
-                light_normal = light.get_normal(light_pos)
+                light_normal = light.normal(light_pos)
                 light_color = light.pbr.emission
             else:
                 light = scene.spheres[index - scene.tri_ptr]
                 light_pos = light.sample_point()
-                light_normal = light.get_normal(light_pos)
+                light_normal = light.normal(light_pos)
                 light_color = light.pbr.emission
 
             dir_noise = self.sampler.hemispherical_sample(light_normal, _u, _v)
@@ -152,11 +151,11 @@ class Renderer(ABC):
             if index < scene.tri_ptr:
                 light = scene.mesh[index]
                 light_pos = light.sample_point()
-                light_normal = light.get_normal(light_pos)
+                light_normal = light.normal(light_pos)
             else:
                 light = scene.spheres[index - scene.tri_ptr]
                 light_pos = light.sample_point()
-                light_normal = light.get_normal(light_pos)
+                light_normal = light.normal(light_pos)
 
             light_dir = self.sampler.hemispherical_sample(
                 light_normal, ti.random(ti.f32), ti.random(ti.f32)

@@ -77,9 +77,13 @@ class Triangle:
         return u * self.v0 + v * self.v1 + (1 - u - v) * self.v2
 
     @ti.func
-    def get_normal(self, pos):
+    def normal(self, pos):
         sign = 1 if ti.random() > 0.5 else -1
         return (self.v1 - self.v0).cross(self.v2 - self.v0).normalized() * sign
+
+    @ti.func
+    def centroid(self):
+        return (self.v0 + self.v1 + self.v2) / 3.0
 
 
 @ti.dataclass
@@ -148,5 +152,9 @@ class Sphere:
         return vec3(x, y, z)
 
     @ti.func
-    def get_normal(self, pos):
+    def normal(self, pos):
         return (pos - self.center).normalized()
+
+    @ti.func
+    def centroid(self):
+        return self.center
