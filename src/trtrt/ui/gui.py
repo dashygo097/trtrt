@@ -1,6 +1,6 @@
 from ..postprocess import (BilateralFilter, GaussianBlur, JointBilateralFilter,
                            ToneMapping)
-from ..renderer import PathTracer, ZBuffer
+from ..renderer import BlinnPhong, PathTracer, ZBuffer
 
 
 def make_ui(f) -> None:
@@ -22,10 +22,10 @@ def make_ui(f) -> None:
                     "depth", f.renderer.params["max_depth"], 1, 20
                 )
                 ambient_rate = f.gui.slider_float(
-                    "ambient rate", f.renderer.params["ambient_rate"], 0.0, 1.0
+                    "ambient", f.renderer.params["ambient_rate"], 0.0, 1.0
                 )
                 direc_light_weight = f.gui.slider_float(
-                    "direct light weight",
+                    "direct light",
                     f.renderer.params["direct_light_weight"],
                     0.0,
                     10.0,
@@ -53,6 +53,27 @@ def make_ui(f) -> None:
 
                 if f.renderer.params["alpha"] != rate:
                     f.renderer.set_alpha(rate)
+                    f.panel_update = True
+
+            # Blinn-Phong specific
+            if isinstance(f.renderer, BlinnPhong):
+                diffuse = f.gui.slider_float(
+                    "diffuse", f.renderer.params["diffuse_rate"], 0.0, 1.0
+                )
+                ambient = f.gui.slider_float(
+                    "ambient", f.renderer.params["ambient_rate"], 0.0, 1.0
+                )
+                click_enable_cosine = f.gui.button(
+                    f"{'Cosine Enabled' if f.renderer.params['enable_cosine'] else 'Cosine Disabled'}",
+                )
+                if f.renderer.params["diffuse_rate"] != diffuse:
+                    f.renderer.set_diffuse_rate(diffuse)
+                    f.panel_update = True
+                if f.renderer.params["ambient_rate"] != ambient:
+                    f.renderer.set_ambient_rate(ambient)
+                    f.panel_update = True
+                if click_enable_cosine:
+                    f.renderer.set_enable_cosine(not f.renderer.params["enable_cosine"])
                     f.panel_update = True
 
         # Camera

@@ -54,7 +54,7 @@ def load_cornellbox():
     s.add_obj(shortbox)
     s.add_obj(tallbox)
     s.add_obj(lit)
-    s.set_bg(vec3(0.1, 0.4, 1.0))
+    s.set_bg(vec3(1.0, 0.1, 0.6))
     c = g.Camera()
     c.set_lookat(2.50, 3.0, 0.0)
     c.set_lookfrom(2.50, 3.50, -6.0)

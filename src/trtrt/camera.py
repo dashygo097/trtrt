@@ -4,9 +4,32 @@ from typing import Dict
 import numpy as np
 import taichi as ti
 from taichi.math import vec3
-from taichi.ui.utils import euler_to_vec, vec_to_euler
 
 from .objects import Ray
+
+
+@ti.func
+def euler_to_vec(yaw, pitch):
+    v = vec3(0.0)
+    v[0] = ti.sin(yaw) * ti.cos(pitch)
+    v[1] = ti.sin(pitch)
+    v[2] = ti.cos(yaw) * ti.cos(pitch)
+    return v
+
+
+@ti.func
+def vec_to_euler(v: vec3):
+    v = v.normalized()
+    pitch = ti.asin(v[1])
+
+    cos_pitch = ti.sqrt(1 - v[1] * v[1])
+
+    sin_yaw = v[0] / cos_pitch
+    cos_yaw = v[2] / cos_pitch
+
+    yaw = ti.atan2(sin_yaw, cos_yaw)
+
+    return yaw, pitch
 
 
 @ti.data_oriented
@@ -115,6 +138,102 @@ class Camera:
         self.proj[None][2, 3] = -1.0
         self.proj[None][3, 2] = -1.0
 
+    @ti.kernel
+    def update_track(
+        self,
+        lookfrom: ti.template(),
+        lookat: ti.template(),
+        vup: ti.template(),
+        up: ti.template(),
+        movement: ti.f32,
+        yaw_delta: ti.f32,
+        pitch_delta: ti.f32,
+        w_pressed: ti.i32,
+        s_pressed: ti.i32,
+        a_pressed: ti.i32,
+        d_pressed: ti.i32,
+        space_pressed: ti.i32,
+        shift_pressed: ti.i32,
+        mouse_moved: ti.i32,
+    ):
+        front = (lookat[None] - lookfrom[None]).normalized()
+        left = vup[None].cross(front)
+        position_change = ti.math.vec3(0.0)
+
+        if w_pressed:
+            position_change += front * movement
+        if s_pressed:
+            position_change -= front * movement
+        if a_pressed:
+            position_change += left * movement
+        if d_pressed:
+            position_change -= left * movement
+        if space_pressed:
+            position_change += up[None] * movement
+        if shift_pressed:
+            position_change -= up[None] * movement
+
+        lookfrom[None] += position_change
+        lookat[None] += position_change
+
+        if mouse_moved:
+            yaw, pitch = vec_to_euler(front)
+            yaw += yaw_delta
+            pitch += pitch_delta
+
+            pitch = ti.max(-1.5533, ti.min(1.5533, pitch))
+
+            new_front = euler_to_vec(yaw, pitch)
+            lookat[None] = lookfrom[None] + new_front
+
+    def track(
+        self,
+        window: ti.ui.Window,
+        movement_speed: float = 3.0,
+        yaw_speed: float = 240.0,
+        pitch_speed: float = 240.0,
+    ) -> None:
+        curr_time = time.perf_counter_ns()
+        if self.last_time is None:
+            self.last_time = curr_time
+        time_elapsed = (curr_time - self.last_time) * 1e-9
+        self.last_time = curr_time
+
+        movement = movement_speed * time_elapsed
+
+        curr_mouse_x, curr_mouse_y = window.get_cursor_pos()
+        yaw_delta = pitch_delta = 0.0
+        mouse_moved = 0
+
+        if window.is_pressed(ti.ui.LMB):
+            if self.last_mouse_x is not None and self.last_mouse_y is not None:
+                dx = curr_mouse_x - self.last_mouse_x
+                dy = curr_mouse_y - self.last_mouse_y
+                if abs(dx) > 1e-6 or abs(dy) > 1e-6:
+                    yaw_delta = -dx * yaw_speed * time_elapsed
+                    pitch_delta = dy * pitch_speed * time_elapsed
+                    mouse_moved = 1
+            self.last_mouse_x, self.last_mouse_y = curr_mouse_x, curr_mouse_y
+        else:
+            self.last_mouse_x = self.last_mouse_y = None
+
+        self.update_track(
+            self.lookfrom,
+            self.lookat,
+            self.vup,
+            self.up,
+            movement,
+            yaw_delta,
+            pitch_delta,
+            int(window.is_pressed("w")),
+            int(window.is_pressed("s")),
+            int(window.is_pressed("a")),
+            int(window.is_pressed("d")),
+            int(window.is_pressed(ti.ui.SPACE)),
+            int(window.is_pressed(ti.ui.SHIFT)),
+            mouse_moved,
+        )
+
     @ti.func
     def get_ray(self, u, v) -> Ray:
         self.update()
@@ -125,96 +244,3 @@ class Camera:
             + v * self.vertical[None]
             - self.lookfrom[None],
         )
-
-    def track(
-        self,
-        window: ti.ui.Window,
-        movement_speed: float = 0.03,
-        yaw_speed: float = 3.0,
-        pitch_speed: float = 3.0,
-    ) -> None:
-        front = (self.lookat[None] - self.lookfrom[None]).normalized()
-        position_change = vec3(0.0)
-        left = self.vup[None].cross(front)
-
-        if self.last_time is None:
-            self.last_time = time.perf_counter_ns()
-        time_elapsed = (time.perf_counter_ns() - self.last_time) * 1e-9
-        self.last_time = time.perf_counter_ns()
-
-        movement_speed *= time_elapsed * 60.0
-        if window.is_pressed("w"):
-            position_change += front * movement_speed
-        if window.is_pressed("s"):
-            position_change -= front * movement_speed
-        if window.is_pressed("a"):
-            position_change += left * movement_speed
-        if window.is_pressed("d"):
-            position_change -= left * movement_speed
-        if window.is_pressed(ti.ui.SPACE):
-            position_change += self.up[None] * movement_speed
-        if window.is_pressed(ti.ui.SHIFT):
-            position_change -= self.up[None] * movement_speed
-
-        self.set_lookfrom(*(position_change + self.lookfrom[None]))
-
-        curr_mouse_x, curr_mouse_y = window.get_cursor_pos()
-
-        if window.is_pressed(ti.ui.LMB):
-            if (self.last_mouse_x is None) or (self.last_mouse_y is None):
-                self.last_mouse_x, self.last_mouse_y = curr_mouse_x, curr_mouse_y
-            dx = curr_mouse_x - self.last_mouse_x
-            dy = curr_mouse_y - self.last_mouse_y
-
-            yaw, pitch = vec_to_euler(front)
-
-            yaw -= dx * yaw_speed * time_elapsed * 60.0
-            pitch += dy * pitch_speed * time_elapsed * 60.0
-
-            pitch_limit = np.pi / 2 * 0.99
-            if pitch > pitch_limit:
-                pitch = pitch_limit
-            elif pitch < -pitch_limit:
-                pitch = -pitch_limit
-
-            front = euler_to_vec(yaw, pitch)
-
-        self.set_lookat(*(self.lookfrom[None] + front))
-        self.last_mouse_x, self.last_mouse_y = curr_mouse_x, curr_mouse_y
-
-    def focus_on(
-        self,
-        window: ti.ui.Window,
-        yaw_speed: float = 3.0,
-        pitch_speed: float = 3.0,
-    ) -> None:
-        front = (self.lookat[None] - self.lookfrom[None]).normalized()
-        curr_mouse_x, curr_mouse_y = window.get_cursor_pos()
-        if self.last_time is None:
-            self.last_time = time.perf_counter_ns()
-        time_elapsed = (time.perf_counter_ns() - self.last_time) * 1e-9
-        self.last_time = time.perf_counter_ns()
-        if window.is_pressed(ti.ui.RMB):
-            if (self.last_mouse_x is None) or (self.last_mouse_y is None):
-                self.last_mouse_x, self.last_mouse_y = curr_mouse_x, curr_mouse_y
-
-            dx = curr_mouse_x - self.last_mouse_x
-            dy = curr_mouse_y - self.last_mouse_y
-
-            yaw, pitch = vec_to_euler(front)
-
-            yaw -= dx * yaw_speed * time_elapsed * 60.0
-            pitch += dy * pitch_speed * time_elapsed * 60.0
-
-            pitch_limit = np.pi / 2 * 0.99
-            if pitch > pitch_limit:
-                pitch = pitch_limit
-            elif pitch < -pitch_limit:
-                pitch = -pitch_limit
-
-            front = euler_to_vec(yaw, pitch)
-
-        self.set_lookfrom(*(self.lookat[None] - front * self.distance))
-        self.last_mouse_x, self.last_mouse_y = curr_mouse_x, curr_mouse_y
-        if self.distance <= 0.0:
-            self.distance = 1e-3
