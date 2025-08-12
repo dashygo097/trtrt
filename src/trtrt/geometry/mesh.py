@@ -18,7 +18,7 @@ class Mesh:
         vertices: np.ndarray,
         indices: Optional[np.ndarray] = None,
         texture_coords: Optional[np.ndarray] = None,
-        coords_mapping: Optional[Dict] = None,
+        coords_mapping: Optional[np.ndarray] = None,
         **kwargs,
     ) -> None:
         from ..objects import PBRMaterial
@@ -37,12 +37,15 @@ class Mesh:
         else:
             self.indices = None
 
-        if texture_coords is not None:
+        if texture_coords is not None and coords_mapping is not None:
             self.texture_coords = ti.Vector.field(
                 texture_coords.shape[1], dtype=ti.f32, shape=texture_coords.shape[0]
             )
             self.texture_coords.from_numpy(texture_coords)
-            self.coords_mapping = coords_mapping
+            self.coords_mapping = ti.Vector.field(
+                coords_mapping.shape[1], dtype=ti.i32, shape=coords_mapping.shape[0]
+            )
+            self.coords_mapping.from_numpy(coords_mapping)
 
         else:
             self.texture_coords = None
@@ -67,9 +70,6 @@ class Mesh:
             obj["coords_mapping"],
             **kwargs,
         )
-
-    def bind_texture(self, texture_path: str) -> None:
-        pass
 
     def use(self, preset: PBRPreset) -> None:
         config = preset.value
