@@ -53,12 +53,12 @@ class BlinnPhong(Renderer):
         self.params["ambient_rate"] = self.ambient_rate[None]
         self.params["enable_cosine"] = self.enable_cosine[None]
 
+    # NOTE: Considering performance, it is recommanded to write all the sampler into one big func/kernel
     @ti.func
-    def sample_blinnphong_direct_light(
+    def sample_diffuse_light(
         self, scene, pos: vec3, normal: vec3, u: ti.f32, v: ti.f32
     ):
         diffuse = vec3(0.0)
-        specular = vec3(0.0)
         num_lights = scene.light_ptr
         if num_lights > 0:
             for i in range(num_lights):
@@ -84,7 +84,7 @@ class BlinnPhong(Renderer):
 
                 diffuse += intensity * self.diffuse_rate[None]
 
-        return diffuse + specular
+        return diffuse
 
     @ti.func
     def ray_color(self, scene, ray: Ray, _u: ti.f32, _v: ti.f32) -> vec3:
@@ -98,10 +98,10 @@ class BlinnPhong(Renderer):
                     background_color = (1.0 - t) * scene.bg_bottom + t * scene.bg_top
                     color_buffer += background_color * self.ambient_rate[None]
 
-                    direct_light = self.sample_blinnphong_direct_light(
+                    diffuse_light = self.sample_diffuse_light(
                         scene, hitinfo.pos, hitinfo.normal, hitinfo.u, hitinfo.v
                     )
-                    color_buffer += direct_light * hitinfo.albedo
+                    color_buffer += diffuse_light * hitinfo.albedo
 
                 else:
                     color_buffer += hitinfo.albedo

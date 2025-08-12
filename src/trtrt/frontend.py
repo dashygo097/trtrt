@@ -16,7 +16,7 @@ from .ui.input_tracer import InputTracer
 
 @ti.data_oriented
 class FrontEnd:
-    def __init__(self, name: str, res: Tuple[int, int]):
+    def __init__(self, name: str, res: Tuple[int, int]) -> None:
         self.res = res
 
         # Buffers
@@ -37,7 +37,7 @@ class FrontEnd:
         self.panel_update: bool = False
         self.cnt = ti.field(dtype=ti.i32, shape=())
         self.fps = ti.field(dtype=ti.i32, shape=())
-        self.fps[None] = 24
+        self.fps[None] = 45
 
         # Materials
         self.g_buffer = GBuffer.field(shape=res)

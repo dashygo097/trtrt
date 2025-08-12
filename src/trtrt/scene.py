@@ -15,7 +15,7 @@ from .utils.const import TMAX, TMIN, ObjectShape, ObjectTag
 
 @ti.data_oriented
 class Scene:
-    def __init__(self, maximum: int = 100) -> None:
+    def __init__(self, maximum: int = 128) -> None:
         self.maximum = maximum
 
         self.objects: List[Abstraction] = []

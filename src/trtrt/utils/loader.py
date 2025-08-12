@@ -17,40 +17,44 @@ def load_obj(obj_path: str) -> Dict:
     vertices = []
     indices = []
     texture_coords = []
-    coords_mapping = {}
-
-    has_texture = False
+    coords_mapping = []
 
     with open(obj_path, "r") as f:
         for line in f:
-            if line.startswith("vt "):
-                has_texture = True
-                texture_coords.append([float(x) for x in line.strip().split(" ")[1:]])
+            tokens = line.strip().split()
+            if not tokens:
+                continue
 
-    with open(obj_path, "r") as f:
-        for line in f:
-            if line.startswith("v "):
-                vertices.append([float(x) for x in line.strip().split(" ")[1:]])
+            if tokens[0] == "v":
+                vertices.append(list(map(float, tokens[1:4])))
+            elif tokens[0] == "vt":
+                texture_coords.append(list(map(float, tokens[1:3])))
+            elif tokens[0] == "f":
+                face_idx = []
+                face_uv = []
+                for vert in tokens[1:]:
+                    if "/" in vert:
+                        v_idx, vt_idx = vert.split("/")[:2]
+                        vi = int(v_idx) - 1
+                        face_idx.append(vi)
 
-            elif line.startswith("f "):
-                if has_texture:
-                    indices.append(
-                        [int(x.split("/")[0]) for x in line.strip().split(" ")[1:]]
-                    )
-                    coords_mapping.update(
-                        {
-                            int(x.split("/")[0]): int(x.split("/")[1])
-                            for x in line.strip().split(" ")[1:]
-                        }
-                    )
-                else:
-                    indices.append([int(x) for x in line.strip().split(" ")[1:]])
+                        if vt_idx:
+                            face_uv.append(int(vt_idx) - 1)
+                        else:
+                            face_uv.append(None)
+                    else:
+                        vi = int(vert) - 1
+                        face_idx.append(vi)
+                        face_uv.append(None)
+
+                indices.append(face_idx)
+                coords_mapping.append(face_uv)
 
     return {
         "vertices": np.array(vertices, dtype=np.float32),
-        "indices": np.array(indices, dtype=np.int32) - 1 if indices else None,
-        "texture_coords": (
-            np.array(texture_coords, dtype=np.float32) if has_texture else None
-        ),
-        "coords_mapping": coords_mapping if has_texture else None,
+        "indices": np.array(indices, dtype=np.int32),
+        "texture_coords": np.array(texture_coords, dtype=np.float32)
+        if texture_coords
+        else None,
+        "coords_mapping": coords_mapping if texture_coords else None,
     }
