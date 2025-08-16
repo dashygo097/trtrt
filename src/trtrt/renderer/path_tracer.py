@@ -75,56 +75,61 @@ class PathTracer(Renderer):
     def ray_color(self, scene, ray: Ray, _u: ti.f32, _v: ti.f32) -> vec3:
         color_buffer = vec3(0.0)
         luminance = vec3(1.0)
+
         for bounce in range(self.max_depth[None]):
             # Russian Roulette
-            if ti.random() > self.p_rr[None] and bounce > 0:
+            if bounce > 0 and ti.random() > self.p_rr[None]:
                 break
 
             if bounce > 0:
                 luminance /= self.p_rr[None]
 
             hitinfo = scene.intersect(ray)
+
             if hitinfo.is_hit and hitinfo.time > TMIN:
                 # PBR: Direct lighting
                 if hitinfo.tag == ObjectTag.PBR:
+                    N = hitinfo.normal
                     V = -ray.dir
-                    F0 = vec3(0.04)
                     F0 = (
-                        F0 * (1.0 - hitinfo.metallic)
+                        vec3(0.4) * (1.0 - hitinfo.metallic)
                         + hitinfo.albedo * hitinfo.metallic
                     )
+                    NdotV = max(N.dot(V), 0.0)
+                    alpha = hitinfo.roughness * hitinfo.roughness
+
                     if self.direct_light_weight[None] > 0.0:
                         # NOTE: That the light_color is zero is equivalent to not is_visible()
                         light_ray, light_color = self.sample_direct_light(
                             scene, hitinfo.pos, hitinfo.normal, _u, _v
                         )
                         L = light_ray.dir
-                        H = (V + L).normalized()
+                        NdotL = ti.max(hitinfo.normal.dot(L), 0.0)
 
-                        k = direct_remapping(hitinfo.roughness * hitinfo.roughness)
-                        NDF = ggx_distribution(hitinfo.normal, H, hitinfo.roughness)
-                        G = geometry_smith(V, hitinfo.normal, L, k)
-                        F = schlick_fresnel(ti.max(0.0, H.dot(V)), F0)
+                        if NdotL > 0.0:
+                            H = (V + L).normalized()
+                            VdotL = ti.max(V.dot(L), 0.0)
+                            HdotV = ti.max(H.dot(V), 0.0)
 
-                        ks = F
-                        kd = 1.0 - ks
-                        kd *= 1.0 - hitinfo.metallic
+                            k = direct_remapping(alpha)
+                            NDF = ggx_distribution(hitinfo.normal, H, hitinfo.roughness)
+                            G = geometry_smith(NdotV, VdotL, k)
+                            F = schlick_fresnel(HdotV, F0)
 
-                        nominator = NDF * G * F
-                        denom = (
-                            4
-                            * max(0.0, hitinfo.normal.dot(V))
-                            * max(hitinfo.normal.dot(L), 0.0)
-                        ) + EPSILON
-                        specular = nominator / denom
+                            ks = F
+                            kd = 1.0 - ks
+                            kd *= 1.0 - hitinfo.metallic
 
-                        NdotL = max(hitinfo.normal.dot(L), 0.0)
-                        color_buffer += (
-                            (kd * hitinfo.albedo / ti.math.pi + specular)
-                            * luminance
-                            * NdotL
-                            * self.direct_light_weight[None]
-                        ) * light_color
+                            nominator = NDF * G * F
+                            denom = (4 * NdotV * NdotL) + EPSILON
+                            specular = nominator / denom
+
+                            color_buffer += (
+                                (kd * hitinfo.albedo / ti.math.pi + specular)
+                                * luminance
+                                * NdotL
+                                * self.direct_light_weight[None]
+                            ) * light_color
 
                     # PBR: Reflection
                     is_specular = False
@@ -135,7 +140,6 @@ class PathTracer(Renderer):
                         # Specular reflection
                         is_specular = True
                         if hitinfo.roughness > 0.0:
-                            alpha = hitinfo.roughness * hitinfo.roughness
                             scatter_dir = self.sampler.ggx_sample(
                                 V, hitinfo.normal, alpha, _u, _v
                             )
