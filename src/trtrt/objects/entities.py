@@ -19,7 +19,7 @@ class Triangle:
     pbr: PBRMaterial
 
     @ti.func
-    def intersect(self, ray: Ray, tmin=TMIN, tmax=TMAX):
+    def intersect(self, ray: Ray, tmin: ti.f32 = TMIN, tmax: ti.f32 = TMAX) -> HitInfo:
         """
         Moller-Trumbore algorithm for triangle-ray intersection
         """
@@ -67,7 +67,7 @@ class Triangle:
         )
 
     @ti.func
-    def sample_point(self):
+    def sample_point(self) -> vec3:
         u = ti.random()
         v = ti.random()
         w = ti.sqrt(u)
@@ -77,12 +77,19 @@ class Triangle:
         return u * self.v0 + v * self.v1 + (1 - u - v) * self.v2
 
     @ti.func
-    def normal(self, pos):
+    def sample_certain_point(self, u: ti.f32, v: ti.f32) -> vec3:
+        w = ti.sqrt(u)
+        u = 1 - w
+        v *= w
+        return u * self.v0 + v * self.v1 + (1 - u - v) * self.v2
+
+    @ti.func
+    def normal(self, pos: vec3) -> vec3:
         sign = 1 if ti.random() > 0.5 else -1
         return (self.v1 - self.v0).cross(self.v2 - self.v0).normalized() * sign
 
     @ti.func
-    def centroid(self):
+    def centroid(self) -> vec3:
         return (self.v0 + self.v1 + self.v2) / 3.0
 
 
@@ -96,7 +103,7 @@ class Sphere:
     pbr: PBRMaterial
 
     @ti.func
-    def intersect(self, ray: Ray, tmin=TMIN, tmax=TMAX):
+    def intersect(self, ray: Ray, tmin: ti.f32 = TMIN, tmax: ti.f32 = TMAX) -> HitInfo:
         """
         Ray-sphere intersection
         """
@@ -143,7 +150,7 @@ class Sphere:
         )
 
     @ti.func
-    def sample_point(self):
+    def sample_point(self) -> vec3:
         theta = ti.random() * 2 * ti.math.pi
         phi = ti.random() * ti.math.pi
         x = self.center.x + self.radius * ti.sin(phi) * ti.cos(theta)
@@ -152,9 +159,18 @@ class Sphere:
         return vec3(x, y, z)
 
     @ti.func
-    def normal(self, pos):
+    def sample_certain_point(self, u: ti.f32, v: ti.f32) -> vec3:
+        theta = u * 2 * ti.math.pi
+        phi = v * ti.math.pi
+        x = self.center.x + self.radius * ti.sin(phi) * ti.cos(theta)
+        y = self.center.y + self.radius * ti.sin(phi) * ti.sin(theta)
+        z = self.center.z + self.radius * ti.cos(phi)
+        return vec3(x, y, z)
+
+    @ti.func
+    def normal(self, pos: vec3) -> vec3:
         return (pos - self.center).normalized()
 
     @ti.func
-    def centroid(self):
+    def centroid(self) -> vec3:
         return self.center

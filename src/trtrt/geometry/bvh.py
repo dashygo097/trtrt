@@ -20,7 +20,7 @@ class AABB:
         )
 
     @ti.func
-    def intersect(self, ray, tmin=TMIN, tmax=TMAX):
+    def intersect(self, ray, tmin: ti.f32 = TMIN, tmax: ti.f32 = TMAX) -> BVHHitInfo:
         t1 = (self.min - ray.origin) / (ray.dir + EPSILON)
         t2 = (self.max - ray.origin) / (ray.dir + EPSILON)
 

@@ -7,7 +7,7 @@ import taichi as ti
 
 
 class InputTracer:
-    def __init__(self, window: ti.ui.Window, pixels):
+    def __init__(self, window: ti.ui.Window, pixels) -> None:
         self.window = window
         self.pixels = pixels
         self.holdkeys: List = [
@@ -42,13 +42,13 @@ class InputTracer:
             if e.key == ti.ui.TAB:
                 self.show_panel = not self.show_panel
 
-    def is_showing_panel(self):
+    def is_showing_panel(self) -> bool:
         return self.show_panel
 
     def should_clear(self) -> bool:
         return (self.on_move() & (not self.is_showing_panel())) | self.refresh()
 
-    def keymap(self):
+    def keymap(self) -> None:
         if self.window.is_pressed("j"):
             current_time = datetime.datetime.now()
             dirpath = sys.path[0]
