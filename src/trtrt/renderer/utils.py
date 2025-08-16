@@ -46,15 +46,14 @@ def ggx_distribution(n: vec3, h: vec3, roughness: ti.f32) -> ti.f32:
 
 
 @ti.func
-def geometry_schlick_ggx(v: vec3, n: vec3, k: ti.f32) -> ti.f32:
-    NdotV = ti.max(n.dot(v), 0.0)
-    return NdotV / (NdotV * (1 - k) + k)
+def geometry_schlick_ggx(ndotv, k: ti.f32) -> ti.f32:
+    return ndotv / (ndotv * (1 - k) + k)
 
 
 @ti.func
-def geometry_smith(v: vec3, n: vec3, l: vec3, k: ti.f32) -> ti.f32:
-    ggx_v = geometry_schlick_ggx(v, n, k)
-    ggx_l = geometry_schlick_ggx(l, n, k)
+def geometry_smith(ndotv, vdotl, k: ti.f32) -> ti.f32:
+    ggx_v = geometry_schlick_ggx(ndotv, k)
+    ggx_l = geometry_schlick_ggx(vdotl, k)
     return ggx_v * ggx_l
 
 
