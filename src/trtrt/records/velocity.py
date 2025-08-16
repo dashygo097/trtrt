@@ -6,8 +6,10 @@ from taichi.math import vec2, vec3, vec4
 
 @ti.data_oriented
 class VelocityBuffer:
-    def __init__(self, res: Tuple[int, int], camera):
-        self.camera = camera
+    def __init__(self, res: Tuple[int, int], camera) -> None:
+        from ..camera import Camera
+
+        self.camera: Camera = camera
         self.width = res[0]
         self.height = res[1]
 

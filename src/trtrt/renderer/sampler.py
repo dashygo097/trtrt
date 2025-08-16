@@ -13,8 +13,7 @@ from .utils import reflect
 
 @ti.data_oriented
 class Sampler(ABC):
-    def __init__(self) -> None:
-        pass
+    def __init__(self) -> None: ...
 
     def _name(self) -> str:
         return self.__class__.__name__

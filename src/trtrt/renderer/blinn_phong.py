@@ -68,11 +68,11 @@ class BlinnPhong(Renderer):
 
                 if index < scene.tri_ptr:
                     light = scene.mesh[index]
-                    light_pos = light.centroid()
+                    light_pos = light.sample_point()
                     light_color = light.pbr.emission
                 else:
                     light = scene.spheres[index - scene.tri_ptr]
-                    light_pos = light.centroid()
+                    light_pos = light.sample_point()
                     light_color = light.pbr.emission
 
                 light_dir = (light_pos - pos).normalized()

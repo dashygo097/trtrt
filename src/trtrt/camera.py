@@ -9,7 +9,7 @@ from .objects import Ray
 
 
 @ti.func
-def euler_to_vec(yaw, pitch):
+def euler_to_vec(yaw: ti.f32, pitch: ti.f32) -> vec3:
     v = vec3(0.0)
     v[0] = ti.sin(yaw) * ti.cos(pitch)
     v[1] = ti.sin(pitch)
@@ -78,10 +78,10 @@ class Camera:
         self.fov[None] = fov
         self.params["fov"] = fov
 
-    def set_lookfrom(self, x, y, z) -> None:
+    def set_lookfrom(self, x: float, y: float, z: float) -> None:
         self.lookfrom[None] = ti.Vector([x, y, z])
 
-    def set_lookat(self, x, y, z) -> None:
+    def set_lookat(self, x: float, y: float, z: float) -> None:
         self.lookat[None] = ti.Vector([x, y, z])
 
     def set_distance(self, distance: float) -> None:
@@ -235,7 +235,7 @@ class Camera:
         )
 
     @ti.func
-    def get_ray(self, u, v) -> Ray:
+    def get_ray(self, u: ti.f32, v: ti.f32) -> Ray:
         self.update()
         return Ray(
             self.lookfrom[None],

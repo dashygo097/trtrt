@@ -15,7 +15,7 @@ def init4bbox(obj):
 
 # NOTE: I HAVE NO IDEA WHY MY ORIGINAL CODE DOESN'T WORK
 # LEAVE THIS FOR TEMPORARY USE
-def init_triangle(triangle):
+def init_triangle(triangle: Triangle) -> None:
     triangle.bbox.min.x = ti.min(triangle.v0.x, triangle.v1.x, triangle.v2.x) - TMIN
     triangle.bbox.max.x = ti.max(triangle.v0.x, triangle.v1.x, triangle.v2.x) + TMIN
     triangle.bbox.min.y = ti.min(triangle.v0.y, triangle.v1.y, triangle.v2.y) - TMIN
@@ -24,7 +24,7 @@ def init_triangle(triangle):
     triangle.bbox.max.z = ti.max(triangle.v0.z, triangle.v1.z, triangle.v2.z) + TMIN
 
 
-def init_sphere(sphere):
+def init_sphere(sphere: Sphere) -> None:
     sphere.bbox.min.x = sphere.center.x - sphere.radius
     sphere.bbox.max.x = sphere.center.x + sphere.radius
     sphere.bbox.min.y = sphere.center.y - sphere.radius

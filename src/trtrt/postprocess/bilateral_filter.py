@@ -164,7 +164,7 @@ class JointBilateralFilter(BilateralFilter):
         self.params["sigma_n"] = self.sigma_n[None]
         self.params["sigma_a"] = self.sigma_a[None]
 
-    def fetch_gbuffer(self, g_buffer):
+    def fetch_gbuffer(self, g_buffer) -> None:
         self.g_buffer = g_buffer
 
     @ti.kernel

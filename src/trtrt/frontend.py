@@ -108,7 +108,7 @@ class FrontEnd:
             # Gamma correction
             self.pixels[i, j] = ti.sqrt(self.acc_buffers[i, j] / self.cnt[None])
 
-    def _preprocess(self):
+    def _preprocess(self) -> None:
         for core in self.post_processors:
             if isinstance(core, JointBilateralFilter) and core.params["enabled"]:
                 core.fetch_gbuffer(self.g_buffer)

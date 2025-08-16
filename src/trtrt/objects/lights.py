@@ -8,7 +8,7 @@ class Ray:
     dir: vec3
 
     @ti.func
-    def at(self, t):
+    def at(self, t: ti.f32) -> vec3:
         return self.origin + t * self.dir
 
 

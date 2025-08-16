@@ -35,5 +35,4 @@ class ProcessorCore(ABC):
 
     @abstractmethod
     @ti.kernel
-    def process(self):
-        pass
+    def process(self): ...

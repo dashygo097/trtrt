@@ -22,7 +22,7 @@ class ToneMapping(ProcessorCore):
         self.exposure[None] = exposure
         self.update()
 
-    def update(self):
+    def update(self) -> None:
         super().update()
         # Update params
         self.params["exposure"] = self.exposure[None]
