@@ -11,6 +11,7 @@ from .postprocess import JointBilateralFilter, ProcessorCore, ToneMapping
 from .records import GBuffer, VelocityBuffer
 from .renderer import Albedo, Renderer
 from .scene import Scene
+from .ui import UIBuilder
 from .ui.input_tracer import InputTracer
 
 
@@ -46,6 +47,9 @@ class FrontEnd:
         # Post Processors
         self.add_post_processor(ToneMapping(enabled=True))
 
+        # UI
+        self.ui = UIBuilder(self)
+
     def _set_fps(self, fps: float) -> None:
         self.fps[None] = fps
 
@@ -78,11 +82,6 @@ class FrontEnd:
             + colored("Renderer: ", attrs=["bold"])
             + colored(f"{self.renderer._name()}", color="blue", attrs=["bold"])
         )
-
-    def ui(self) -> None:
-        from .ui.gui import make_ui
-
-        make_ui(self)
 
     @ti.kernel
     def clear(self):
@@ -120,7 +119,7 @@ class FrontEnd:
         while self.window.running:
             # Control Flow
             t = time.time()
-            self.ui()
+            self.ui.render()
             self.input_tracer.control_panel()
             self.input_tracer.keymap()
             if not self.input_tracer.is_showing_panel():
@@ -142,8 +141,8 @@ class FrontEnd:
             self.accumulate()
 
             # NOTE: VELOCITY BUFFER TEST
-            # self.velocity_buffer.store_positions(self.g_buffer)
-            # self.velocity_buffer.compute_velocity()
+            self.velocity_buffer.store_positions(self.g_buffer)
+            self.velocity_buffer.compute_velocity()
             # self.velocity_buffer.render_velocity(self.acc_buffers)
             # self.pixels = self.acc_buffers
 

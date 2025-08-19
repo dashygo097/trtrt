@@ -3,6 +3,7 @@ from .base import *
 from .blinn_phong import *
 from .normal import *
 from .path_tracer import *
+from .ray_marching import *
 from .sampler import *
 from .utils import *
 from .zbuffer import *
