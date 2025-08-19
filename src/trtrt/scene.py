@@ -6,6 +6,7 @@ from taichi.math import vec3
 from termcolor import colored
 
 from .geometry.bvh import BVH
+from .geometry.geometry_data import GeometryData
 from .geometry.mesh import Mesh
 from .objects import DirecLight, Ray, Sphere, Triangle, init4bbox
 from .records import BVHHitInfo, HitInfo
@@ -36,9 +37,6 @@ class Scene:
 
         self.bvh = BVH()
 
-        # self.hit_count = ti.field(dtype=ti.i32, shape=())
-        # self.hit_count[None] = 0
-
     def __getitem__(self, index: int):
         if 0 <= index < self.tri_ptr:
             obj = self.mesh[index]
@@ -48,31 +46,6 @@ class Scene:
             raise IndexError("Index out of range")
 
         return obj
-
-    @overload
-    def add_mesh(self, mesh: Mesh) -> None:
-        # TODO: If the indices buffer is not provided, implement the delaunay triangulation
-        self.add_mesh(mesh)
-
-    @overload
-    def add_mesh(
-        self,
-        tag: ObjectTag,
-        vertices: np.ndarray,
-        indices: np.ndarray,
-        **kwargs,
-    ) -> None:
-        self.add_mesh(tag, vertices, indices, **kwargs)
-
-    @overload
-    def add_mesh(
-        self,
-        tag: int,
-        vertices: np.ndarray,
-        indices: np.ndarray,
-        **kwargs,
-    ) -> None:
-        self.add_mesh(tag, vertices, indices, **kwargs)
 
     @overload
     def add_obj(
@@ -85,7 +58,31 @@ class Scene:
     def add_obj(self, objs: List) -> None:
         self.add_obj(objs)
 
-    def set_bg(self, color: ti.Vector) -> None:
+    @overload
+    def add_mesh(self, mesh: Mesh) -> None:
+        # TODO: If the indices buffer is not provided, implement the delaunay triangulation
+        self.add_mesh(mesh)
+
+    @overload
+    def add_mesh(
+        self,
+        tag: int,
+        geometry_data: GeometryData,
+        **kwargs,
+    ) -> None:
+        self.add_mesh(tag, geometry_data, **kwargs)
+
+    @overload
+    def add_mesh(
+        self,
+        tag: int,
+        vertices: np.ndarray,
+        indices: np.ndarray,
+        **kwargs,
+    ) -> None:
+        self.add_mesh(tag, vertices, indices, **kwargs)
+
+    def set_bg(self, color: vec3) -> None:
         self.bg_top = color
         self.bg_bottom = color
 
@@ -105,8 +102,6 @@ class Scene:
         stack[0] = self.bvh.root_id
         stack_ptr = 1
 
-        # self.hit_count[None] = 0
-
         while stack_ptr > 0:
             stack_ptr -= 1
             node_id = stack[stack_ptr]
@@ -118,7 +113,6 @@ class Scene:
             node = self.bvh.nodes[node_id]
 
             aabb_hit = node.aabb.intersect(ray, tmin, hitinfo.time)
-            # self.hit_count[None] += 1
             if not aabb_hit.is_hit or aabb_hit.tmin >= hitinfo.time:
                 continue
 
@@ -127,12 +121,10 @@ class Scene:
                     hitinfo_tmp = self.mesh[node.obj_id].intersect(
                         ray, tmin, hitinfo.time
                     )
-                    # self.hit_count[None] += 1
                 elif node.obj_id < self.tri_ptr + self.sphere_ptr:
                     hitinfo_tmp = self.spheres[node.obj_id - self.tri_ptr].intersect(
                         ray, tmin, hitinfo.time
                     )
-                    # self.hit_count[None] += 1
 
                 if hitinfo_tmp.is_hit and (hitinfo_tmp.time < hitinfo.time):
                     hitinfo = hitinfo_tmp
@@ -151,18 +143,14 @@ class Scene:
         hitinfo = HitInfo(time=tmax)
         hitinfo_tmp = HitInfo(time=tmax)
 
-        # self.hit_count[None] = 0
-
         for index in range(self.tri_ptr):
             hitinfo_tmp = self.mesh[index].intersect(ray, tmin, hitinfo.time)
-            # self.hit_count[None] += 1
 
             if hitinfo_tmp.is_hit and (hitinfo_tmp.time < hitinfo.time):
                 hitinfo = hitinfo_tmp
 
         for index in range(self.sphere_ptr):
             hitinfo_tmp = self.spheres[index].intersect(ray, tmin, hitinfo.time)
-            # self.hit_count[None] += 1
 
             if hitinfo_tmp.is_hit and (hitinfo_tmp.time < hitinfo.time):
                 hitinfo = hitinfo_tmp
@@ -185,7 +173,7 @@ class Scene:
             self.bvh.info()
 
         for index, obj in enumerate(self.objects):
-            if obj.tag == ObjectTag.PBR and obj.entity.pbr.emission.norm() > 0.0:
+            if obj.tag == ObjectTag.PBR and obj.entity.emission.norm() > 0.0:
                 self.light_map[self.light_ptr] = index
                 self.light_ptr += 1
 
@@ -232,32 +220,22 @@ class Scene:
     def add_mesh(self, *args, **kwargs) -> None:
         if len(args) == 1 and isinstance(args[0], Mesh):
             mesh = args[0]
-            assert mesh.indices is not None, "Indices buffer is required"
-
-            vertices = mesh.vertices.to_numpy()
-            indices = mesh.indices.to_numpy()
-            self.add_mesh(mesh.tag, vertices, indices, **mesh.kwargs)
-
+            self._add_mesh(mesh)
+        elif len(args) >= 2 and isinstance(args[1], GeometryData):
+            tag = args[0]
+            geometry_data = args[1]
+            self._add_mesh_from_geometry_data(tag, geometry_data, **kwargs)
         elif (
-            len(args) == 3
-            and isinstance(args[0], int)
+            len(args) >= 3
             and isinstance(args[1], np.ndarray)
             and isinstance(args[2], np.ndarray)
         ):
             tag = args[0]
             vertices = args[1]
             indices = args[2]
-            n_tris = indices.shape[0]
-            for index in range(n_tris):
-                v0 = vertices[indices[index, 0]]
-                v1 = vertices[indices[index, 1]]
-                v2 = vertices[indices[index, 2]]
-                self.add_obj(Triangle(tag=tag, v0=v0, v1=v1, v2=v2, **kwargs))
-
+            self._add_mesh_from_arrays(tag, vertices, indices, **kwargs)
         else:
-            raise ValueError(
-                "Invalid arguments, please provide either a Mesh object or (tag, vertices, indices, **kwargs)"
-            )
+            raise TypeError(f"Invalid arguments for add_mesh: {args} {kwargs}")
 
     def add_obj(self, *args, **kwargs) -> None:
         if len(args) == 1 and isinstance(args[0], Triangle):
@@ -277,3 +255,34 @@ class Scene:
             raise ValueError(
                 "Invalid arguments, please provide either a Triangle, Sphere, or Mesh object"
             )
+
+    def _add_mesh(self, mesh: Mesh) -> None:
+        if mesh.geometry is not None and mesh.tag is not None:
+            self._add_mesh_from_arrays(
+                mesh.tag,
+                mesh.geometry.vertices,
+                mesh.geometry.indices,
+                **mesh._material_params,
+            )
+
+    def _add_mesh_from_geometry_data(
+        self, tag: int, geometry_data: GeometryData, **kwargs
+    ) -> None:
+        self._add_mesh_from_arrays(
+            tag,
+            geometry_data.vertices,
+            geometry_data.indices,
+            **kwargs,
+        )
+
+    def _add_mesh_from_arrays(
+        self, tag: int, vertices: np.ndarray, indices: np.ndarray, **kwargs
+    ) -> None:
+        n_tris = indices.shape[0]
+        for index in range(n_tris):
+            v0 = vertices[indices[index, 0]]
+            v1 = vertices[indices[index, 1]]
+            v2 = vertices[indices[index, 2]]
+            obj = Triangle(tag=tag, v0=v0, v1=v1, v2=v2, **kwargs)
+            init4bbox(obj)
+            self.add_obj(obj)

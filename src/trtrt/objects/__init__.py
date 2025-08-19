@@ -1,4 +1,4 @@
 from .entities import *
 from .lights import *
-from .pbr import *
+from .materials import *
 from .utils import *

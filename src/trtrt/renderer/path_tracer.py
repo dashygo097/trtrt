@@ -165,8 +165,7 @@ class PathTracer(Renderer):
 
                 elif hitinfo.tag == ObjectTag.GLASS:
                     # Glass
-                    refraction_ratio = 0.8  # TODO: Add refraction ratio
-                    refract_dir = refract(ray.dir, hitinfo.normal, refraction_ratio)
+                    refract_dir = refract(ray.dir, hitinfo.normal, hitinfo.refraction)
                     ray = Ray(hitinfo.pos, refract_dir)
                     luminance *= hitinfo.albedo
 

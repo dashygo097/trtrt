@@ -13,8 +13,7 @@ def init4bbox(obj):
         raise ValueError("Unknown object type")
 
 
-# NOTE: I HAVE NO IDEA WHY MY ORIGINAL CODE DOESN'T WORK
-# LEAVE THIS FOR TEMPORARY USE
+# NOTE: LEAVE THIS FOR TEMPORARY USE
 def init_triangle(triangle: Triangle) -> None:
     triangle.bbox.min.x = ti.min(triangle.v0.x, triangle.v1.x, triangle.v2.x) - TMIN
     triangle.bbox.max.x = ti.max(triangle.v0.x, triangle.v1.x, triangle.v2.x) + TMIN

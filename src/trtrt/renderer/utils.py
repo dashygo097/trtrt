@@ -23,7 +23,7 @@ def refract(v: vec3, n: vec3, ior: ti.f32) -> vec3:
     else:
         dir = eta * v + (eta * cos_theta - ti.sqrt(k)) * normal
 
-    return dir
+    return dir.normalized()
 
 
 @ti.func
