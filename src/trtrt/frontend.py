@@ -11,8 +11,7 @@ from .postprocess import JointBilateralFilter, ProcessorCore, ToneMapping
 from .records import GBuffer, VelocityBuffer
 from .renderer import Albedo, Renderer
 from .scene import Scene
-from .ui import UIBuilder
-from .ui.input_tracer import InputTracer
+from .ui import InputTracer, UIBuilder
 
 
 @ti.data_oriented

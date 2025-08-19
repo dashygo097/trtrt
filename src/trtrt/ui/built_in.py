@@ -1,5 +1,9 @@
-from ..postprocess import (BilateralFilter, GaussianBlur, JointBilateralFilter,
-                           ToneMapping)
+from ..postprocess import (
+    BilateralFilter,
+    GaussianBlur,
+    JointBilateralFilter,
+    ToneMapping,
+)
 from ..renderer import BlinnPhong, PathTracer, ZBuffer
 from .builder import UIBuilder
 

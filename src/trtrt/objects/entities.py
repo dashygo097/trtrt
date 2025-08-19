@@ -49,6 +49,8 @@ class Triangle:
                 hit_pos = ray.at(t)
                 hit_normal = edge1.cross(edge2).normalized()
                 hit_front = ray.dir.dot(hit_normal) > 0
+                u = b1
+                v = b2
                 if hit_front:
                     hit_normal = -hit_normal
         return HitInfo(

@@ -10,7 +10,10 @@ from ..utils import ObjectTag, PBRPreset, load_obj
 @ti.data_oriented
 class Mesh:
     def __init__(self) -> None:
-        pass
+        self.vertices: ti.Vector.field
+        self.indices: ti.Vector.field
+        self.texture_coords: ti.Vector.field
+        self.coords_mapping: ti.Vector.field
 
     def load(
         self,
