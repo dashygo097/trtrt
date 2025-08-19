@@ -80,12 +80,12 @@ class Renderer(ABC):
                 light = scene.mesh[index]
                 light_pos = light.sample_point()
                 light_normal = light.normal(light_pos)
-                light_color = light.pbr.emission
+                light_color = light.emission
             else:
                 light = scene.spheres[index - scene.tri_ptr]
                 light_pos = light.sample_point()
                 light_normal = light.normal(light_pos)
-                light_color = light.pbr.emission
+                light_color = light.emission
 
             dir_noise = self.sampler.hemispherical_sample(light_normal, _u, _v)
             light_dir = (light_pos - hit_point + dir_noise).normalized()

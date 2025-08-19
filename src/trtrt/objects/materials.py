@@ -8,3 +8,9 @@ class PBRMaterial:
     metallic: ti.f32
     roughness: ti.f32
     emission: vec3
+
+
+@ti.dataclass
+class GlassMaterial:
+    albedo: vec3
+    refraction: ti.f32

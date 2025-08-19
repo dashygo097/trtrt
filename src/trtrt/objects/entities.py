@@ -5,7 +5,6 @@ from ..geometry.bvh import AABB
 from ..records import HitInfo
 from ..utils.const import EPSILON, TMAX, TMIN
 from .lights import Ray
-from .pbr import PBRMaterial
 
 
 @ti.dataclass
@@ -16,7 +15,11 @@ class Triangle:
     v2: vec3
     bbox: AABB
 
-    pbr: PBRMaterial
+    albedo: vec3
+    metallic: ti.f32
+    roughness: ti.f32
+    emission: vec3
+    refracion: ti.f32
 
     @ti.func
     def intersect(self, ray: Ray, tmin: ti.f32 = TMIN, tmax: ti.f32 = TMAX) -> HitInfo:
@@ -62,10 +65,11 @@ class Triangle:
             tag=self.tag,
             u=u,
             v=v,
-            albedo=self.pbr.albedo,
-            metallic=self.pbr.metallic,
-            roughness=self.pbr.roughness,
-            emission=self.pbr.emission,
+            albedo=self.albedo,
+            metallic=self.metallic,
+            roughness=self.roughness,
+            emission=self.emission,
+            refracion=self.refracion,
         )
 
     @ti.func
@@ -102,7 +106,11 @@ class Sphere:
     radius: ti.f32
     bbox: AABB
 
-    pbr: PBRMaterial
+    albedo: vec3
+    metallic: ti.f32
+    roughness: ti.f32
+    emission: vec3
+    refraction: ti.f32
 
     @ti.func
     def intersect(self, ray: Ray, tmin: ti.f32 = TMIN, tmax: ti.f32 = TMAX) -> HitInfo:
@@ -145,10 +153,11 @@ class Sphere:
             tag=self.tag,
             u=u,
             v=v,
-            albedo=self.pbr.albedo,
-            metallic=self.pbr.metallic,
-            roughness=self.pbr.roughness,
-            emission=self.pbr.emission,
+            albedo=self.albedo,
+            metallic=self.metallic,
+            roughness=self.roughness,
+            emission=self.emission,
+            refracion=self.refraction,
         )
 
     @ti.func

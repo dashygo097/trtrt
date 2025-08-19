@@ -1,81 +1,112 @@
-from typing import Optional
+from typing import Any, Dict, Optional
 
 import numpy as np
-import taichi as ti
-from taichi.math import vec3
 
 from ..utils import ObjectTag, PBRPreset, load_obj
+from .geometry_data import GeometryData
 
 
-@ti.data_oriented
+class MaterialFactory:
+    @staticmethod
+    def create_material(tag: int, **kwargs) -> Any:
+        if tag == ObjectTag.PBR:
+            from ..objects import PBRMaterial
+
+            return PBRMaterial(**kwargs)
+        elif tag == ObjectTag.GLASS:
+            from ..objects import GlassMaterial
+
+            return GlassMaterial(**kwargs)
+
+
 class Mesh:
     def __init__(self) -> None:
-        self.vertices: ti.Vector.field
-        self.indices: ti.Vector.field
-        self.texture_coords: ti.Vector.field
-        self.coords_mapping: ti.Vector.field
+        self._tag: Optional[int] = None
+        self._geometry: Optional[GeometryData] = None
+        self._material: Optional[Any] = None
+        self._material_params: Dict[str, Any] = {}
 
-    def load(
+    @property
+    def tag(self) -> Optional[int]:
+        return self._tag
+
+    @property
+    def geometry(self) -> Optional[GeometryData]:
+        return self._geometry
+
+    @property
+    def material(self) -> Optional[Any]:
+        return self._material
+
+    def is_valid(self) -> bool:
+        return (
+            self.tag is not None
+            and self.geometry is not None
+            and self.material is not None
+        )
+
+    def load_geometry(
         self,
-        tag: int,
         vertices: np.ndarray,
-        indices: Optional[np.ndarray] = None,
+        indices: np.ndarray,
         texture_coords: Optional[np.ndarray] = None,
         coords_mapping: Optional[np.ndarray] = None,
-        **kwargs,
-    ) -> None:
-        from ..objects import PBRMaterial
-
-        self.tag = tag
-        self.vertices = ti.Vector.field(
-            vertices.shape[1], dtype=ti.f32, shape=vertices.shape[0]
-        )
-        self.vertices.from_numpy(vertices)
-        if indices is not None:
-            self.indices = ti.Vector.field(
-                indices.shape[1], dtype=ti.i32, shape=indices.shape[0]
+    ) -> "Mesh":
+        try:
+            self._geometry = GeometryData(
+                vertices=vertices,
+                indices=indices,
+                texture_coords=texture_coords,
+                coords_mapping=coords_mapping,
             )
-            self.indices.from_numpy(indices)
+            return self
+        except ValueError as e:
+            raise ValueError(
+                f"Failed to load geometry: {e}. Ensure vertices and indices are valid."
+            ) from e
 
-        else:
-            self.indices = None
+    def set_material(self, tag: int, **material_params) -> "Mesh":
+        self._tag = tag
+        self._material_params = material_params
 
-        if texture_coords is not None and coords_mapping is not None:
-            self.texture_coords = ti.Vector.field(
-                texture_coords.shape[1], dtype=ti.f32, shape=texture_coords.shape[0]
+        try:
+            self._material = MaterialFactory.create_material(tag, **material_params)
+        except Exception as e:
+            raise ValueError(
+                f"Failed to create material for tag {tag}: {e}. "
+                "Ensure the material parameters are valid."
+            ) from e
+
+        return self
+
+    def from_file(self, obj_file: str) -> "Mesh":
+        try:
+            obj_data = load_obj(obj_file)
+            self.load_geometry(
+                vertices=obj_data["vertices"],
+                indices=obj_data["indices"],
+                texture_coords=obj_data.get("texture_coords"),
+                coords_mapping=obj_data.get("coords_mapping"),
             )
-            self.texture_coords.from_numpy(texture_coords)
-            self.coords_mapping = ti.Vector.field(
-                coords_mapping.shape[1], dtype=ti.i32, shape=coords_mapping.shape[0]
-            )
-            self.coords_mapping.from_numpy(coords_mapping)
+            return self
 
-        else:
-            self.texture_coords = None
-            self.coords_mapping = None
+        except Exception as e:
+            raise IOError(
+                f"Failed to load object file {obj_file}: {e}. "
+                "Ensure the file exists and is a valid OBJ file."
+            ) from e
 
-        self.kwargs = kwargs
-        if self.tag == ObjectTag.PBR:
-            self.kwargs = {"pbr": PBRMaterial(**kwargs)}
+    def apply_preset(self, preset: PBRPreset) -> "Mesh":
+        if self._tag != ObjectTag.PBR:
+            raise ValueError("Preset can only be applied to PBR materials.")
 
-    def load_file(
-        self,
-        tag: int,
-        obj_file: str,
-        **kwargs,
-    ) -> None:
-        obj = load_obj(obj_file)
-        self.load(
-            tag,
-            obj["vertices"],
-            obj["indices"],
-            obj["texture_coords"],
-            obj["coords_mapping"],
-            **kwargs,
-        )
-
-    def use(self, preset: PBRPreset) -> None:
         config = preset.value
-        self.metallic.get(config["metallic"], 0.0)
-        self.roughness.get(config["roughness"], 0.0)
-        self.emission.get(config["emission"], vec3(0.0))
+        if hasattr(self._material, "metallic"):
+            self._material.metallic = config.get("metallic", 0.0)
+        if hasattr(self._material, "roughness"):
+            self._material.roughness = config.get("roughness", 1.0)
+        if hasattr(self._material, "emission"):
+            emission = config.get("emission", (0.0, 0.0, 0.0))
+            self._material.emission = np.array(emission, dtype=np.float32)
+
+        return self

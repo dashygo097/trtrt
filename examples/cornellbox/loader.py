@@ -1,53 +1,33 @@
 from taichi.math import vec3
 
-import trtrt as g
+import trtrt as tr
 
 
 def load_cornellbox():
-    floor = g.Mesh()
-    left = g.Mesh()
-    right = g.Mesh()
-    shortbox = g.Mesh()
-    tallbox = g.Mesh()
-    lit = g.Mesh()
-    floor.load_file(
-        g.ObjectTag.PBR,
-        "./assets/floor.obj",
-        albedo=vec3(1.0),
-    )
-    left.load_file(
-        g.ObjectTag.PBR,
-        "./assets/left.obj",
-        albedo=vec3(1.0, 0.0, 0.0),
-        roughness=1.0,
-    )
-    right.load_file(
-        g.ObjectTag.PBR,
-        "./assets/right.obj",
-        albedo=vec3(0.0, 1.0, 0.0),
-        roughness=1.0,
-    )
-    shortbox.load_file(
-        g.ObjectTag.PBR,
-        "./assets/shortbox.obj",
-        albedo=vec3(1.0),
-        roughness=1.0,
-    )
-    tallbox.load_file(
-        g.ObjectTag.PBR,
-        "./assets/tallbox.obj",
-        albedo=vec3(1.0),
-        metallic=1.0,
-        roughness=0.2,
-    )
-    lit.load_file(
-        g.ObjectTag.PBR,
-        "./assets/light.obj",
-        albedo=vec3(1.0),
-        emission=vec3(10.0),
-    )
+    floor = tr.Mesh()
+    left = tr.Mesh()
+    right = tr.Mesh()
+    shortbox = tr.Mesh()
+    tallbox = tr.Mesh()
+    lit = tr.Mesh()
 
-    s = g.Scene()
+    floor.from_file("./assets/floor.obj")
+    left.from_file("./assets/left.obj")
+    right.from_file("./assets/right.obj")
+    shortbox.from_file("./assets/shortbox.obj")
+    tallbox.from_file("./assets/tallbox.obj")
+    lit.from_file("./assets/light.obj")
+
+    floor.set_material(tr.ObjectTag.PBR, albedo=vec3(1.0))
+    left.set_material(tr.ObjectTag.PBR, albedo=vec3(1.0, 0.0, 0.0), roughness=1.0)
+    right.set_material(tr.ObjectTag.PBR, albedo=vec3(0.0, 1.0, 0.0), roughness=1.0)
+    shortbox.set_material(tr.ObjectTag.PBR, albedo=vec3(1.0), roughness=1.0)
+    tallbox.set_material(
+        tr.ObjectTag.PBR, albedo=vec3(1.0), metallic=1.0, roughness=0.2
+    )
+    lit.set_material(tr.ObjectTag.PBR, albedo=vec3(1.0), emission=vec3(10.0))
+
+    s = tr.Scene()
     s.add_obj(floor)
     s.add_obj(left)
     s.add_obj(right)
@@ -55,7 +35,7 @@ def load_cornellbox():
     s.add_obj(tallbox)
     s.add_obj(lit)
     s.set_bg(vec3(1.0, 0.1, 0.6))
-    c = g.Camera()
+    c = tr.Camera()
     c.set_lookat(2.50, 3.0, 0.0)
     c.set_lookfrom(2.50, 3.50, -6.0)
     return s, c

@@ -1,23 +1,23 @@
 import taichi as ti
 from loader import load_cornellbox
 
-import trtrt as g
+import trtrt as tr
 
 ti.init(arch=ti.vulkan)
 res = (800, 800)
 s, c = load_cornellbox()
-r = g.PathTracer(sampler=g.UniformSampler(), samples_per_pixel=1)
+r = tr.PathTracer(sampler=tr.UniformSampler(), samples_per_pixel=1)
 
 
 def cornell_main():
-    f = g.FrontEnd("Cornell Box", res=res)
+    f = tr.FrontEnd("Cornell Box", res=res)
 
     f.set_scene(s)
     f.set_camera(c)
     f.set_renderer(r)
-    f.add_post_processor(g.GaussianBlur(enabled=True))
-    f.add_post_processor(g.BilateralFilter(enabled=False))
-    f.add_post_processor(g.JointBilateralFilter(enabled=False))
+    f.add_post_processor(tr.GaussianBlur(enabled=True))
+    f.add_post_processor(tr.BilateralFilter(enabled=False))
+    f.add_post_processor(tr.JointBilateralFilter(enabled=False))
 
     f.run()
 
