@@ -67,7 +67,7 @@ class BlinnPhong(Renderer):
                 light_color = vec3(0.0)
 
                 if index < scene.tri_ptr:
-                    light = scene.mesh[index]
+                    light = scene.triangles[index]
                     light_pos = light.sample_point()
                     light_color = light.emission
                 else:
