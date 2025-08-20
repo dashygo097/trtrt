@@ -27,7 +27,7 @@ def load_cornellbox():
     )
     lit.set_material(tr.ObjectTag.PBR, albedo=vec3(1.0), emission=vec3(10.0))
 
-    s = tr.Scene()
+    s = tr.Scene(maximum=512)
     s.add_obj(floor)
     s.add_obj(left)
     s.add_obj(right)

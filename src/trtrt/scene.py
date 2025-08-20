@@ -24,7 +24,7 @@ class Scene:
         self.light_map = ti.field(dtype=ti.i32, shape=maximum)
         self.light_ptr = 0
 
-        self.mesh = Triangle.field(shape=maximum)
+        self.triangles = Triangle.field(shape=maximum)
         self.tri_ptr = 0
 
         self.spheres = Sphere.field(shape=maximum)
@@ -39,7 +39,7 @@ class Scene:
 
     def __getitem__(self, index: int):
         if 0 <= index < self.tri_ptr:
-            obj = self.mesh[index]
+            obj = self.triangles[index]
         elif self.tri_ptr <= index < self.tri_ptr + self.sphere_ptr:
             obj = self.spheres[index - self.tri_ptr]
         else:
@@ -118,7 +118,7 @@ class Scene:
 
             if node.obj_id != -1:
                 if node.obj_id < self.tri_ptr:
-                    hitinfo_tmp = self.mesh[node.obj_id].intersect(
+                    hitinfo_tmp = self.triangles[node.obj_id].intersect(
                         ray, tmin, hitinfo.time
                     )
                 elif node.obj_id < self.tri_ptr + self.sphere_ptr:
@@ -144,7 +144,7 @@ class Scene:
         hitinfo_tmp = HitInfo(time=tmax)
 
         for index in range(self.tri_ptr):
-            hitinfo_tmp = self.mesh[index].intersect(ray, tmin, hitinfo.time)
+            hitinfo_tmp = self.triangles[index].intersect(ray, tmin, hitinfo.time)
 
             if hitinfo_tmp.is_hit and (hitinfo_tmp.time < hitinfo.time):
                 hitinfo = hitinfo_tmp
@@ -162,9 +162,6 @@ class Scene:
         return self.bruteforce_intersect(ray, tmin, tmax)
 
     def make(self, bvh_info: bool = False) -> None:
-        for i in range(len(self.objects)):
-            init4bbox(self.objects[i].entity)
-
         self.bvh.set_objects(self.objects)
         self.bvh.build()
 
@@ -178,7 +175,7 @@ class Scene:
                 self.light_ptr += 1
 
             if obj.shape == ObjectShape.TRIANGLE:
-                self.mesh[self.tri_ptr] = obj.entity
+                self.triangles[self.tri_ptr] = obj.entity
                 self.tri_ptr += 1
             elif obj.shape == ObjectShape.SPHERE:
                 self.spheres[self.sphere_ptr] = obj.entity
@@ -217,6 +214,25 @@ class Scene:
                 + colored("Directional Light", "yellow", attrs=["bold"])
             )
 
+    def add_obj(self, *args, **kwargs) -> None:
+        if len(args) == 1 and isinstance(args[0], Triangle):
+            obj = args[0]
+            self.objects.append(Abstraction(obj))
+        elif len(args) == 1 and isinstance(args[0], Sphere):
+            obj = args[0]
+            self.objects.append(Abstraction(obj))
+        elif len(args) == 1 and isinstance(args[0], Mesh):
+            obj = args[0]
+            self.add_mesh(obj)
+        elif len(args) == 1 and isinstance(args[0], List):
+            for obj in args[0]:
+                self.add_obj(obj)
+
+        else:
+            raise ValueError(
+                "Invalid arguments, please provide either a Triangle, Sphere, or Mesh object"
+            )
+
     def add_mesh(self, *args, **kwargs) -> None:
         if len(args) == 1 and isinstance(args[0], Mesh):
             mesh = args[0]
@@ -236,25 +252,6 @@ class Scene:
             self._add_mesh_from_arrays(tag, vertices, indices, **kwargs)
         else:
             raise TypeError(f"Invalid arguments for add_mesh: {args} {kwargs}")
-
-    def add_obj(self, *args, **kwargs) -> None:
-        if len(args) == 1 and isinstance(args[0], Triangle):
-            obj = args[0]
-            self.objects.append(Abstraction(obj))
-        elif len(args) == 1 and isinstance(args[0], Sphere):
-            obj = args[0]
-            self.objects.append(Abstraction(obj))
-        elif len(args) == 1 and isinstance(args[0], Mesh):
-            obj = args[0]
-            self.add_mesh(obj)
-        elif len(args) == 1 and isinstance(args[0], List):
-            for obj in args[0]:
-                self.add_obj(obj)
-
-        else:
-            raise ValueError(
-                "Invalid arguments, please provide either a Triangle, Sphere, or Mesh object"
-            )
 
     def _add_mesh(self, mesh: Mesh) -> None:
         if mesh.geometry is not None and mesh.tag is not None:

@@ -77,7 +77,7 @@ class Renderer(ABC):
             light_color = vec3(0.0)
 
             if index < scene.tri_ptr:
-                light = scene.mesh[index]
+                light = scene.triangles[index]
                 light_pos = light.sample_point()
                 light_normal = light.normal(light_pos)
                 light_color = light.emission
@@ -149,7 +149,7 @@ class Renderer(ABC):
             index = ti.random(ti.i32) % scene.light_ptr
             index = scene.light_map[index]
             if index < scene.tri_ptr:
-                light = scene.mesh[index]
+                light = scene.triangles[index]
                 light_pos = light.sample_point()
                 light_normal = light.normal(light_pos)
             else:
