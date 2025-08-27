@@ -1,3 +1,4 @@
+import os
 from typing import List, Union, overload
 
 import numpy as np
@@ -92,6 +93,10 @@ class Scene:
 
     def set_dir_light(self, dir_light: DirecLight) -> None:
         self.dir_light = dir_light
+
+    def save_meshes(self, filename: str) -> None:
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        ...
 
     @ti.func
     def bvh_intersect(self, ray, tmin=TMIN, tmax=TMAX) -> HitInfo:

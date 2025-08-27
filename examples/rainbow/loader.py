@@ -4,7 +4,7 @@ from taichi.math import vec3
 import trtrt as tr
 
 
-def load_room():
+def load_rainbow():
     floor = tr.Mesh()
     blank = tr.Mesh()
     room = tr.Mesh()
@@ -69,53 +69,15 @@ def load_room():
         roughness=1.0,
     )
 
-    triangle = tr.Triangle(
-        tag=tr.ObjectTag.PBR,
-        v0=vec3(0, 0, 1),
-        v1=vec3(1, 0, 1),
-        v2=vec3(0, 1, 1),
-        albedo=vec3(1.0),
-        metallic=1.0,
-        roughness=0.0,
-        emission=vec3(0.0),
-    )
-    sphere = tr.Sphere(
-        tag=tr.ObjectTag.PBR,
-        center=vec3(-2.5, 2, 2.5),
-        radius=0.5,
-        albedo=vec3(0.1, 0.4, 1.0),
-        metallic=0.2,
-        roughness=0.7,
-        emission=vec3(0.0),
-    )
-    light1 = tr.Sphere(
-        tag=tr.ObjectTag.PBR,
-        center=vec3(2.9, 0.9, -2.9),
-        radius=0.1,
-        albedo=vec3(1.0, 0.0, 0.0),
-        metallic=0.0,
-        roughness=0.0,
-        emission=vec3(5.0, 0.0, 0.0),
-    )
-    light2 = tr.Sphere(
-        tag=tr.ObjectTag.PBR,
-        center=vec3(-2.9, 0.9, -2.9),
-        radius=0.1,
-        albedo=vec3(0.0, 1.0, 0.0),
-        metallic=0.0,
-        roughness=0.0,
-        emission=vec3(0.0, 5.0, 0.0),
-    )
-
-    light3 = tr.DirecLight(
+    dlight = tr.DirecLight(
         dir=vec3(0.1, -2.0, -1.0),
         color=vec3(1.0),
     )
 
     s = tr.Scene(maximum=5000)
     s.set_bg(vec3(0.0, 0.4, 1.0))
-    s.add_obj([floor, blank, room, triangle, sphere, light1, light2])
-    s.set_dir_light(light3)
+    s.add_obj([floor, blank, room])
+    s.set_dir_light(dlight)
     c = tr.Camera()
     c.set_lookfrom(0, 4, 8)
     c.set_lookat(0, 1, -1)
