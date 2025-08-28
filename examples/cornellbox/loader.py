@@ -26,6 +26,7 @@ def load_cornellbox():
         tr.ObjectTag.PBR, albedo=vec3(1.0), metallic=1.0, roughness=0.2
     )
     lit.set_material(tr.ObjectTag.PBR, albedo=vec3(1.0), emission=vec3(10.0))
+    ambient_light = tr.AmbientLight(color=vec3(1.0, 0.1, 0.6))
 
     s = tr.Scene(maximum=512)
     s.add_obj(floor)
@@ -34,6 +35,7 @@ def load_cornellbox():
     s.add_obj(shortbox)
     s.add_obj(tallbox)
     s.add_obj(lit)
+    s.set_ambient_light(ambient_light)
     c = tr.Camera()
     c.set_lookat(2.50, 3.0, 0.0)
     c.set_lookfrom(2.50, 3.50, -6.0)

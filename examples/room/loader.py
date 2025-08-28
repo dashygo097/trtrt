@@ -112,8 +112,11 @@ def load_room():
         color=vec3(1.0),
     )
 
+    light4 = tr.AmbientLight(color=vec3(0.1, 0.8, 0.1))
+
     s = tr.Scene(maximum=5000)
     s.add_obj([floor, blank, room, triangle, sphere, light1, light2])
+    s.set_ambient_light(light4)
     s.set_directional_light(light3)
     c = tr.Camera()
     c.set_lookfrom(0, 4, 8)

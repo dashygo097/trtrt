@@ -105,11 +105,13 @@ def load_rainbow():
     )
 
     dlight = tr.DirecLight(dir=vec3(0.5, -2.0, -2.0), color=vec3(10.0))
+    alight = tr.AmbientLight(color=vec3(10.0))
 
     s = tr.Scene(maximum=5000)
     s.add_obj([floor, blank, room])
     s.add_obj(rainbow)
     s.set_directional_light(dlight)
+    s.set_ambient_light(alight)
     c = tr.Camera()
     c.set_lookfrom(0, 4, 8)
     c.set_lookat(0, 1, -1)
