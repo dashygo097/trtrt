@@ -16,3 +16,9 @@ class Ray:
 class DirecLight:
     dir: vec3
     color: vec3
+
+
+@ti.dataclass
+class AmbientLight:
+    emission: vec3
+    color: vec3

@@ -171,8 +171,7 @@ class PathTracer(Renderer):
 
             else:
                 # Background
-                t = 0.5 * (ray.dir.normalized()[1] + 1.0)
-                background_color = (1.0 - t) * scene.bg_bottom + t * scene.bg_top
+                background_color = scene.ambient_light.color
                 if bounce > 0:
                     color_buffer += (
                         background_color * luminance * self.ambient_rate[None]

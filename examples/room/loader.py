@@ -113,9 +113,8 @@ def load_room():
     )
 
     s = tr.Scene(maximum=5000)
-    s.set_bg(vec3(0.0, 0.4, 1.0))
     s.add_obj([floor, blank, room, triangle, sphere, light1, light2])
-    s.set_dir_light(light3)
+    s.set_directional_light(light3)
     c = tr.Camera()
     c.set_lookfrom(0, 4, 8)
     c.set_lookat(0, 1, -1)
