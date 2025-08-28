@@ -6,7 +6,7 @@ from taichi.math import vec3
 
 from ..objects import Ray
 from ..records import GBuffer
-from ..utils import FAR_Z, NEAR_Z, TMIN
+from ..utils import EPSILON, FAR_Z, NEAR_Z, TMIN
 from .sampler import Sampler, UniformSampler
 
 
@@ -121,13 +121,14 @@ class Renderer(ABC):
             dir_light = vec3(0.0)
 
         else:
-            shadow_ray = Ray(pos, light_dir)
+            shadow_offset = normal * TMIN
+            shadow_ray = Ray(pos + shadow_offset, light_dir)
             shadow_info = scene.intersect(shadow_ray)
 
             if (
                 shadow_info.is_hit
                 and shadow_info.time > TMIN
-                and shadow_info.emission.norm() == 0.0
+                and shadow_info.emission.max() <= EPSILON
             ):
                 dir_light = vec3(0.0)
 
