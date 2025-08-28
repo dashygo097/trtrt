@@ -9,7 +9,7 @@ from termcolor import colored
 from .geometry.bvh import BVH
 from .geometry.geometry_data import GeometryData
 from .geometry.mesh import Mesh
-from .objects import DirecLight, Ray, Sphere, Triangle, init4bbox
+from .objects import AmbientLight, DirecLight, Ray, Sphere, Triangle, init4bbox
 from .records import BVHHitInfo, HitInfo
 from .utils.abstract import Abstraction
 from .utils.const import TMAX, TMIN, ObjectShape, ObjectTag
@@ -31,10 +31,8 @@ class Scene:
         self.spheres = Sphere.field(shape=maximum)
         self.sphere_ptr = 0
 
-        self.bg_top = vec3(0.0)
-        self.bg_bottom = vec3(0.0)
-
-        self.dir_light = DirecLight()
+        self.ambient_light = AmbientLight()
+        self.directional_light = DirecLight()
 
         self.bvh = BVH()
 
@@ -83,16 +81,11 @@ class Scene:
     ) -> None:
         self.add_mesh(tag, vertices, indices, **kwargs)
 
-    def set_bg(self, color: vec3) -> None:
-        self.bg_top = color
-        self.bg_bottom = color
+    def set_ambient_light(self, ambient_light: AmbientLight) -> None:
+        self.ambient_light = ambient_light
 
-    def set_bg_gradient(self, bottom: ti.Vector, top: ti.Vector) -> None:
-        self.bg_top = top
-        self.bg_bottom = bottom
-
-    def set_dir_light(self, dir_light: DirecLight) -> None:
-        self.dir_light = dir_light
+    def set_directional_light(self, directional_light: DirecLight) -> None:
+        self.directional_light = directional_light
 
     def save_meshes(self, filename: str) -> None:
         os.makedirs(os.path.dirname(filename), exist_ok=True)
@@ -189,7 +182,7 @@ class Scene:
         self.info()
 
     def info(self) -> None:
-        has_directional_light = 1 if self.dir_light.color.norm() > 0.0 else 0
+        has_directional_light = 1 if self.directional_light.color.max() > 0.0 else 0
         print("[INFO] BUILD SUCCESS!")
         print(
             "[INFO] "

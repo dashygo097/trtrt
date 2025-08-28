@@ -110,8 +110,8 @@ class Renderer(ABC):
     def sample_directional_light(
         self, scene, pos: vec3, normal: vec3, _u: ti.f32, _v: ti.f32
     ) -> vec3:
-        dir_light = scene.dir_light.color
-        light_dir = -scene.dir_light.dir
+        dir_light = scene.directional_light.color
+        light_dir = -scene.directional_light.dir
         # Add soft shadow
         light_dir = self.sampler.sample_cone(light_dir, 5.0, _u, _v)
 

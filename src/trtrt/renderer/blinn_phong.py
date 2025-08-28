@@ -108,8 +108,7 @@ class BlinnPhong(Renderer):
 
         else:
             # Background
-            t = 0.5 * (ray.dir.normalized()[1] + 1.0)
-            background_color = (1.0 - t) * scene.bg_bottom + t * scene.bg_top
-            color_buffer += background_color
+            background_color = scene.ambient_light.color
+            color_buffer += background_color * self.ambient_rate[None]
 
         return color_buffer
