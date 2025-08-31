@@ -7,7 +7,7 @@ ti.init(arch=ti.vulkan)
 res = (800, 800)
 
 s, c = load_rainbow()
-r = g.PathTracer(sampler=g.UniformSampler(), samples_per_pixel=1, max_depth=4)
+r = g.PathTracer(sampler=g.BlueNoiseSampler(), samples_per_pixel=1, max_depth=4)
 
 
 def room_main():
