@@ -73,10 +73,10 @@ class GaussianBlur(ProcessorCore):
                 weight_sum += weight
 
             if weight_sum > 0:
-                self.dst[i, j] = blur_sum / weight_sum
+                self.temp_buffers[i, j] = blur_sum / weight_sum
 
             else:
-                self.dst[i, j] = vec3(0.0)
+                self.temp_buffers[i, j] = vec3(0.0)
 
         for i, j in self.buffers:
             blur_sum = vec3(0.0)
@@ -95,21 +95,21 @@ class GaussianBlur(ProcessorCore):
                         * self.radius[None]
                     )
                 )
-                blur_sum += weight * self.dst[i, y]
+                blur_sum += weight * self.temp_buffers[i, y]
                 weight_sum += weight
 
             if weight_sum > 0.0:
-                self.dst[i, j] = blur_sum / weight_sum
+                self.temp_buffers[i, j] = blur_sum / weight_sum
 
             else:
-                self.dst[i, j] = vec3(0.0)
+                self.temp_buffers[i, j] = vec3(0.0)
 
         for i, j in self.buffers:
             # NOTE: This will make the whole img more and more blurred as monte carlo integration proceeds
 
-            self.buffers[i, j] = self.dst[i, j] * self.weight[None] + self.buffers[
-                i, j
-            ] * (1 - self.weight[None])
+            self.buffers[i, j] = self.temp_buffers[i, j] * self.weight[
+                None
+            ] + self.buffers[i, j] * (1 - self.weight[None])
 
 
 class Bloom(GaussianBlur):

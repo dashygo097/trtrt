@@ -19,9 +19,8 @@ class ProcessorCore(ABC):
 
     def set_buffers(self, buffers) -> None:
         self.res = (buffers.shape[0], buffers.shape[1])
-
         self.buffers = buffers
-        self.dst = ti.Vector.field(3, dtype=ti.f32, shape=buffers.shape)
+        self.temp_buffers = ti.Vector.field(3, dtype=ti.f32, shape=self.res)
 
     def toggle(self) -> None:
         self.enabled[None] = 0 if self.params["enabled"] else 1

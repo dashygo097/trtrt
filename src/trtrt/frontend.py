@@ -49,6 +49,8 @@ class FrontEnd:
         # UI
         self.ui = UIBuilder(self)
 
+        self.prev_camera_pos = ti.Vector.field(3, dtype=ti.f32, shape=())
+
     def _set_fps(self, fps: float) -> None:
         self.fps[None] = fps
 
@@ -142,8 +144,6 @@ class FrontEnd:
             # NOTE: VELOCITY BUFFER TEST
             self.velocity_buffer.store_positions(self.g_buffer)
             self.velocity_buffer.compute_velocity()
-            # self.velocity_buffer.render_velocity(self.acc_buffers)
-            # self.pixels = self.acc_buffers
 
             self.input_tracer.pixels = self.pixels
             canvas.set_image(self.pixels)

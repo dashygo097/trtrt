@@ -58,6 +58,7 @@ class BilateralFilter(ProcessorCore):
     @ti.kernel
     def process(self):
         for i, j in self.buffers:
+            color = self.buffers[i, j]
             filter_sum = vec3(0.0)
             weight_sum = 0.0
 
@@ -73,7 +74,7 @@ class BilateralFilter(ProcessorCore):
                             * self.sigma_d[None]
                             * self.radius[None]
                         )
-                        - (self.buffers[x, y] - self.buffers[i, j]).norm_sqr()
+                        - (self.buffers[x, y] - color).norm_sqr()
                         / (
                             2.0
                             * self.sigma_r[None]
@@ -85,15 +86,15 @@ class BilateralFilter(ProcessorCore):
                     weight_sum += spatial_weight
 
             if weight_sum > 0:
-                self.dst[i, j] = filter_sum / weight_sum
+                self.temp_buffers[i, j] = filter_sum / weight_sum
 
             else:
-                self.dst[i, j] = vec3(0.0)
+                self.temp_buffers[i, j] = vec3(0.0)
 
         for i, j in self.buffers:
-            self.buffers[i, j] = self.dst[i, j] * self.weight[None] + self.buffers[
-                i, j
-            ] * (1 - self.weight[None])
+            self.buffers[i, j] = self.temp_buffers[i, j] * self.weight[
+                None
+            ] + self.buffers[i, j] * (1 - self.weight[None])
 
 
 @ti.data_oriented
@@ -137,7 +138,7 @@ class JointBilateralFilter(BilateralFilter):
         self.buffers = buffers
 
         self.res = self.buffers.shape
-        self.dst = ti.Vector.field(3, dtype=ti.f32, shape=self.res)
+        self.temp_buffers = ti.Vector.field(3, dtype=ti.f32, shape=self.res)
 
     def set_sigma_z(self, sigma_z: float) -> None:
         self.sigma_z[None] = sigma_z
@@ -227,10 +228,10 @@ class JointBilateralFilter(BilateralFilter):
                     filter_sum += spatial_weight * self.buffers[x, y]
                     weight_sum += spatial_weight
             if weight_sum > 0:
-                self.dst[i, j] = filter_sum / weight_sum
+                self.temp_buffers[i, j] = filter_sum / weight_sum
             else:
-                self.dst[i, j] = vec3(0.0)
+                self.temp_buffers[i, j] = vec3(0.0)
         for i, j in self.buffers:
-            self.buffers[i, j] = self.dst[i, j] * self.weight[None] + self.buffers[
-                i, j
-            ] * (1 - self.weight[None])
+            self.buffers[i, j] = self.temp_buffers[i, j] * self.weight[
+                None
+            ] + self.buffers[i, j] * (1 - self.weight[None])
