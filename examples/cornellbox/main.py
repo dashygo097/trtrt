@@ -21,6 +21,8 @@ def cornell_main():
 
     f.run()
 
+    f.scene.save_meshes("./assets/scene.obj")
+
 
 if __name__ == "__main__":
     cornell_main()
