@@ -1,7 +1,7 @@
 from typing import Tuple
 
 import taichi as ti
-from taichi.math import vec2, vec3, vec4
+from taichi.math import mat4, vec2, vec3, vec4
 
 
 @ti.data_oriented
@@ -27,14 +27,14 @@ class VelocityBuffer:
                 curr_pos = self.current_positions[i, j].xy * 0.5 + 0.5
                 prev_pos = self.previous_positions[i, j].xy * 0.5 + 0.5
 
-                self.velocity[i, j] = (curr_pos - prev_pos) * ti.Vector(
-                    [self.width, self.height]
+                self.velocity[i, j] = (curr_pos - prev_pos) * vec2(
+                    self.width, self.height
                 )
             else:
                 self.velocity[i, j] = vec2(0.0)
 
     @ti.func
-    def project_world_position(self, world_pos: vec3, matrix):
+    def project_world_position(self, world_pos: vec3, matrix: mat4):
         pos = vec4(world_pos[0], world_pos[1], world_pos[2], 1.0)
         ndc_pos = vec3(0.0)
 
