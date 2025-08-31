@@ -3,7 +3,6 @@ from typing import List, Union, overload
 
 import numpy as np
 import taichi as ti
-from taichi.math import vec3
 from termcolor import colored
 
 from .geometry.bvh import BVH
@@ -89,7 +88,19 @@ class Scene:
 
     def save_meshes(self, filename: str) -> None:
         os.makedirs(os.path.dirname(filename), exist_ok=True)
-        ...
+        with open(filename, "w") as f:
+            f.write("# OBJ file\n")
+            vertex_offset = 1
+            for index in range(self.tri_ptr):
+                tri = self.triangles[index]
+                v0 = tri.v0
+                v1 = tri.v1
+                v2 = tri.v2
+                f.write(f"v {v0[0]} {v0[1]} {v0[2]}\n")
+                f.write(f"v {v1[0]} {v1[1]} {v1[2]}\n")
+                f.write(f"v {v2[0]} {v2[1]} {v2[2]}\n")
+                f.write(f"f {vertex_offset} {vertex_offset + 1} {vertex_offset + 2}\n")
+                vertex_offset += 3
 
     @ti.func
     def bvh_intersect(self, ray, tmin=TMIN, tmax=TMAX) -> HitInfo:
