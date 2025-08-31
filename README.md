@@ -1,6 +1,6 @@
 # trtrt
 
-A tiny real-time(not yet) ray tracer written in taichi-lang from scratch.
+A tiny real-time ray tracer written in taichi-lang from scratch.
 
 ## References
 
