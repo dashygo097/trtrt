@@ -6,7 +6,7 @@ import trtrt as tr
 ti.init(arch=ti.vulkan)
 res = (800, 800)
 s, c = load_cornellbox()
-r = tr.PathTracer(sampler=tr.UniformSampler(), samples_per_pixel=1)
+r = tr.PathTracer(sampler=tr.BlueNoiseSampler(), samples_per_pixel=1)
 
 
 def cornell_main():
