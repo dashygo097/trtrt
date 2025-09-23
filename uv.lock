@@ -154,14 +154,12 @@ name = "trtrt"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "numpy" },
     { name = "taichi" },
     { name = "termcolor" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "numpy", specifier = ">=2.3.1" },
     { name = "taichi", specifier = ">=1.7.3" },
     { name = "termcolor", specifier = ">=3.1.0" },
 ]
