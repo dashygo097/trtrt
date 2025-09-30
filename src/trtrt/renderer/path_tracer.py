@@ -181,7 +181,9 @@ class PathTracer(Renderer):
                     directional_light = self.sample_directional_light(
                         scene, ray.origin, ray.dir, _u, _v
                     )
-                    color_buffer += directional_light * luminance
+                    color_buffer += (
+                        directional_light * luminance * self.direct_light_weight[None]
+                    )
                     break
 
                 else:
