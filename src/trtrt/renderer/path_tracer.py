@@ -154,7 +154,6 @@ class PathTracer(Renderer):
 
                     if is_specular:
                         luminance *= hitinfo.albedo
-
                     else:
                         cos_term = max(0.0, scatter_dir.dot(hitinfo.normal))
                         luminance *= hitinfo.albedo * cos_term * ti.math.pi
